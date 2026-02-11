@@ -1,94 +1,41 @@
-## Project Overview
+# Project Overview
 
-This is a single-page web application built with React, TypeScript, and Vite. It serves as a dashboard for managing marketing-related activities, including campaigns, leads (entities), and data ingestion. The application uses Tailwind CSS for styling and `lucide-react` for icons. State management is primarily handled within the main `App.tsx` component, which orchestrates the different views and components.
+This is a React and TypeScript project, "nexus-light-app," built with Vite. The application is a "Sales OS 2026" and appears to be a CRM or sales management tool. It includes views for searching, managing entities (leads), running campaigns, an inbox, and viewing insights. The UI is styled with Tailwind CSS and includes icons from `lucide-react`. The application state is managed within the main `App.tsx` component.
 
-**Key Technologies:**
+# Building and Running
 
-*   **Framework:** React 19
-*   **Language:** TypeScript 5
-*   **Build Tool:** Vite 7
-*   **Styling:** Tailwind CSS 4
-*   **Testing:** Vitest with React Testing Library
-*   **Icons:** Lucide React
+To get the application running locally, follow these steps:
 
-## Building and Running
+1.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
 
-### Prerequisites
+2.  **Start the Development Server:**
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173` (or the next available port).
 
-*   Node.js and npm (or a compatible package manager).
+3.  **Build for Production:**
+    ```bash
+    npm run build
+    ```
 
-### Installation
+4.  **Run Tests:**
+    ```bash
+    npm run test
+    ```
 
-To install the project dependencies, run the following command from the project root directory:
+5.  **Lint Files:**
+    ```bash
+    npm run lint
+    ```
 
-```bash
-npm install
-```
+# Development Conventions
 
-### Development Server
-
-To start the local development server, run:
-
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5173` (or the next available port). The server supports hot module replacement.
-
-### Building for Production
-
-To create a production-ready build, run:
-
-```bash
-npm run build
-```
-
-This command first runs the TypeScript compiler (`tsc`) and then uses Vite to bundle the application. The output will be placed in the `dist` directory (this is Vite's default).
-
-### Previewing the Production Build
-
-To preview the production build locally, run:
-
-```bash
-npm run preview
-```
-
-This will start a local server to serve the files from the `dist` directory.
-
-## Testing
-
-The project uses Vitest for running unit and component tests.
-
-To run all tests, use:
-
-```bash
-npm run test
-```
-
-To run tests in watch mode with an interactive UI, you can often use `vitest --ui`, though you may need to add this as a separate script to `package.json`.
-
-## Development Conventions
-
-### Linting
-
-The project is configured with ESLint for code quality and consistency. To run the linter, use:
-
-```bash
-npm run lint
-```
-
-### Directory Structure
-
-*   `src/components`: Contains reusable React components.
-*   `src/views`: Contains larger components that represent different "pages" or "views" of the application (e.g., `SearchView`, `CampaignsView`).
-*   `src/data`: Contains mock data used for development.
-*   `src/utils`: Contains utility functions or components (e.g., `IconComponent`).
-*   `public/`: Contains static assets that are copied directly to the build output.
-
-### State Management
-
-Global application state and routing logic are managed within the main `App.tsx` component using React hooks (`useState`, `useEffect`).
-
-### Styling
-
-Styling is done using Tailwind CSS utility classes directly in the JSX. A global stylesheet `src/index.css` is used for base styles.
+*   **Component Structure:** Components are organized by feature/view within the `src/components` and `src/views` directories. Each component folder contains the component file (`.tsx`) and a `types.ts` file for its specific types.
+*   **Styling:** The project uses Tailwind CSS for styling. Configuration is in `tailwind.config.js`. Global styles are in `src/index.css`.
+*   **State Management:** The main application state is managed in the `App.tsx` component using React hooks (`useState`, `useEffect`).
+*   **Data:** Mock data is used for development and is located in `src/data/mockData.ts`.
+*   **Testing:** Tests are written with `vitest` and `@testing-library/react`. Test files are co-located with the components they test (e.g., `Dock.test.tsx`).
