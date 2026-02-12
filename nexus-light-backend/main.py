@@ -58,8 +58,8 @@ def seed_database():
 def on_startup():
     create_db_and_tables()
     seed_database()
-    from app.config import SEARCH_API_KEY # Import here to ensure config is loaded
-    print(f"Loaded SEARCH_API_KEY: {SEARCH_API_KEY}")
+    from app.config import SERPAPI_API_KEY # Import here to ensure config is loaded
+    print(f"Loaded SERPAPI_API_KEY: {SERPAPI_API_KEY}")
 
 @app.get("/api/status", tags=["Health Check"])
 def get_status():
