@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.database import get_db, Entity
 from app.models import SearchRequest, SearchResponse, EntityModel, UIComponent
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, SERPAPI_API_KEY
 from google import genai 
 import google.genai.types as types
 import json
@@ -108,7 +108,7 @@ def google_web_search(query: str) -> str:
 
     
 
-    api_key = os.getenv("SERPAPI_API_KEY")
+    api_key = SERPAPI_API_KEY
 
     if not api_key:
 
@@ -245,175 +245,28 @@ async def search_generator(user_query: str, db: Session):
         """
 
         model = client.generative_model(MODEL_ID)
-
         chat = model.start_chat()
 
     
 
-    fetched_entities: List[EntityModel] = []
-
-    web_search_data: Optional[str] = None
-
-    final_summary: str = ""
+        fetched_entities: List[EntityModel] = []
 
     
 
-    async def send_event(event_type: str, data: dict):
+        web_search_data: Optional[str] = None
 
-        event = {"event": event_type, "data": data}
+    
 
-        yield f"data: {json.dumps(event)}\n\n"
+        final_summary: str = ""
 
-        await asyncio.sleep(0.01)
+    
 
-    try:
+    
 
-        response = await run_in_threadpool(
+    
 
-            chat.send_message,
+        model = client.generative_model(MODEL_ID)
 
-            user_query,
+    
 
-            tools=[get_entities_tool, google_search_tool]
-
-        )
-
-        while response.function_calls:
-
-            function_call = response.function_calls[0]
-
-            tool_name = function_call.name
-
-            tool_args = {k: v for k, v in function_call.args.items()}
-
-            
-
-            logger.info(f"Gemini requested tool call: {tool_name} with args: {tool_args}")
-
-            async for event in send_event("tool_call", {"name": tool_name, "args": tool_args}):
-
-                yield event
-
-            tool_response_content = None
-
-            if tool_name == "get_entities_from_db":
-
-                db_query = tool_args.get("query", "")
-
-                db_results = await run_in_threadpool(get_entities_from_db, db_query, db)
-
-                fetched_entities.extend([EntityModel(**entity) for entity in db_results])
-
-                tool_response_content = {"entities": db_results}
-
-            
-
-            elif tool_name == "google_web_search":
-
-                web_query = tool_args.get("query", "")
-
-                web_search_result = await run_in_threadpool(google_web_search, web_query)
-
-                web_search_data = web_search_result
-
-                tool_response_content = {"result": web_search_result}
-
-            
-
-            async for event in send_event("tool_response", {"name": tool_name, "response": tool_response_content}):
-
-                yield event
-
-            response = await run_in_threadpool(
-
-                chat.send_message,
-
-                types.Part(function_response=types.FunctionResponse(name=tool_name, response=tool_response_content))
-
-            )
-
-        final_summary = response.text
-
-        async for event in send_event("final_summary", {"summary": final_summary}):
-
-            yield event
-
-        # --- Dynamic UI Generation ---
-
-        ui_generation_context = f"""
-
-        User Query: {user_query}
-
-        Summary: {final_summary}
-
-        Entities found: {json.dumps([ent.dict() for ent in fetched_entities]) if fetched_entities else "None"}
-
-        Web search results: {web_search_data if web_search_data else "None"}
-
-        Please provide a JSON list of UI components to render based on this.
-
-        """
-
-        
-
-        ui_response = await run_in_threadpool(
-
-            model.generate_content,
-
-            ui_generation_context,
-
-            generation_config=types.GenerationConfig(response_mime_type="application/json")
-
-        )
-
-        
-
-        try:
-
-            ui_json = json.loads(ui_response.text)
-
-            if "ui_components" in ui_json and isinstance(ui_json["ui_components"], list):
-
-                parsed_components = [UIComponent(**comp) for comp in ui_json["ui_components"]]
-
-                async for event in send_event("ui_components", {"components": [comp.dict() for comp in parsed_components]}):
-
-                    yield event
-
-            else:
-
-                async for event in send_event("ui_components", {"components": [{"component_type": "TextOutput", "data": {"text": final_summary}}]}):
-
-                    yield event
-
-        except (json.JSONDecodeError, TypeError) as e:
-
-            logger.error(f"Error parsing UI components from Gemini: {e}")
-
-            async for event in send_event("ui_components", {"components": [{"component_type": "TextOutput", "data": {"text": final_summary}}]}):
-
-                yield event
-
-    except Exception as e:
-
-        logger.error(f"Error in search generator: {e}", exc_info=True)
-
-        async for event in send_event("error", {"detail": str(e)}):
-
-            yield event
-
-@router.post("")
-
-async def perform_intelligent_search_stream(
-
-    request: SearchRequest, db: Session = Depends(get_db)
-
-):
-
-    return StreamingResponse(
-
-        search_generator(request.query, db),
-
-        media_type="text/event-stream"
-
-    )
+        chat = model.start_chat()
