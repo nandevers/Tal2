@@ -11,7 +11,7 @@ RUN npm install
 COPY ./nexus-light-app/ .
 
 # Build the application
-RUN npm run build
+RUN npx vite build
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine

@@ -1,206 +1,419 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.database import get_db, Entity
-from app.models import SearchRequest, SearchResponse
+from app.models import SearchRequest, SearchResponse, EntityModel, UIComponent
 from app.config import GEMINI_API_KEY
-from google import genai # Changed import
-import google.genai.types as types # Import types for Tool and GoogleSearch
+from google import genai 
+import google.genai.types as types
 import json
 import logging
-from starlette.concurrency import run_in_threadpool # Import for async wrapping
+from starlette.concurrency import run_in_threadpool
+import re
+import asyncio
+from typing import List, Optional
 
 router = APIRouter(
     prefix="/api/search",
     tags=["Search"]
 )
 
-# Configure the Gemini API client
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables.")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
-MODEL_ID = 'models/gemini-2.5-flash'
 
-# Setup logging
+MODEL_ID = 'gemini-2.0-flash'
+
+
+
 logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
-# --- Local Tool Functions ---
+
+
+import requests
+
+import os
 
 def get_entities_from_db(query: str, db: Session) -> list[dict]:
+
     """
+
     Searches the local database for entities (people or businesses) matching the query.
+
     Returns a list of dictionaries with entity details.
+
     """
+
     search_term = f"%{query}%"
+
     db_results = db.query(Entity).filter(
+
         or_(
+
             Entity.name.ilike(search_term),
+
             Entity.role.ilike(search_term),
+
             Entity.company.ilike(search_term),
+
             Entity.industry.ilike(search_term),
+
             Entity.location.ilike(search_term),
+
             Entity.source.ilike(search_term)
+
         )
+
     ).all()
+
     
+
     results_list = [
+
         {
+
             "id": entity.id, "type": entity.type, "name": entity.name,
+
             "role": entity.role, "company": entity.company,
+
             "industry": entity.industry, "location": entity.location,
+
             "avatar": entity.avatar, "status": entity.status,
+
             "group": entity.group, "source": entity.source,
+
             "coords": entity.coords
+
         } for entity in db_results
+
     ]
+
     return results_list
 
 def google_web_search(query: str) -> str:
-    """
-    Performs a Google Web Search for the given query.
-    Returns a summary of the search results as a string.
-    This is a placeholder for actual Google Search API integration.
-    """
-    logger.info(f"Simulating Google Web Search for: {query}")
-    # In a real scenario, this would call an external Google Search API
-    return f"Simulated web search results for '{query}': No live API integration yet, but this is where it would go."
 
-# --- Tool Definitions for Gemini ---
+    """
+
+    Performs a Google search using the SerpApi with robust error handling.
+
+    Returns a formatted string of the search results or a clear error message.
+
+    """
+
+    logger.info(f"Performing SerpApi Google Search for: {query}")
+
+    
+
+    api_key = os.getenv("SERPAPI_API_KEY")
+
+    if not api_key:
+
+        logger.error("SERPAPI_API_KEY is not set in the environment variables.")
+
+        return "Error: The SerpApi API key is not configured."
+
+    try:
+
+        url = "https://serpapi.com/search"
+
+        payload = {"q": query, "api_key": api_key}
+
+        
+
+        response = requests.get(url, params=payload)
+
+        
+
+        if 400 <= response.status_code < 500:
+
+            logger.error(f"Client Error {response.status_code}: {response.text}")
+
+            return f"Error: The search request was denied or invalid (Status {response.status_code}). Please check the API key and query."
+
+        elif 500 <= response.status_code < 600:
+
+            logger.error(f"Server Error {response.status_code}: {response.text}")
+
+            return f"Error: The web search service is currently unavailable (Status {response.status_code}). Please try again later."
+
+        response.raise_for_status()
+
+        
+
+        results = response.json()
+
+        items = results.get('organic_results', [])
+
+        
+
+        if not items:
+
+            return f"No Google search results found for '{query}'."
+
+            
+
+        formatted_results = []
+
+        for item in items[:5]:
+
+            title = item.get('title', 'No Title')
+
+            link = item.get('link', 'No Link')
+
+            snippet = item.get('snippet', 'No Snippet')
+
+            formatted_results.append(f"Title: {title}\nURL: {link}\nSnippet: {snippet}\n---")
+
+        
+
+        return "Google Search Results:\n" + "\n".join(formatted_results)
+
+    except requests.exceptions.RequestException as e:
+
+        logger.error(f"Network error during SerpApi search for '{query}': {e}", exc_info=True)
+
+        return "Error: A network problem occurred while trying to perform the web search."
+
+    except Exception as e:
+
+        logger.error(f"An unexpected error occurred during SerpApi search for '{query}': {e}", exc_info=True)
+
+        return "An unexpected error occurred with the web search tool."
 
 get_entities_tool = types.Tool(
+
     function_declarations=[
+
         types.FunctionDeclaration(
+
             name="get_entities_from_db",
+
             description="Searches the local database for sales entities (people or businesses) based on a query.",
+
             parameters=types.Schema(
+
                 type=types.Type.OBJECT,
-                properties={
-                    "query": types.Schema(type=types.Type.STRING, description="The search query for entities (e.g., 'fintech CEOs in Brazil', 'SaaS companies').")
-                },
+
+                properties={"query": types.Schema(type=types.Type.STRING, description="The search query for entities.")},
+
                 required=["query"],
+
             ),
+
         )
+
     ]
+
 )
 
 google_search_tool = types.Tool(
+
     function_declarations=[
+
         types.FunctionDeclaration(
+
             name="google_web_search",
-            description="Performs a general Google Web Search to find information on the internet. Use this for general knowledge questions or when information is not expected to be in a local database.",
+
+            description="Use this tool to search the public internet for people, companies, or information.",
+
             parameters=types.Schema(
+
                 type=types.Type.OBJECT,
-                properties={
-                    "query": types.Schema(type=types.Type.STRING, description="The search query for Google.")
-                },
+
+                properties={"query": types.Schema(type=types.Type.STRING, description="The search query for Google.")},
+
                 required=["query"],
+
             ),
+
         )
+
     ]
+
 )
 
-@router.post("", response_model=SearchResponse)
-async def perform_intelligent_search(
-    request: SearchRequest, db: Session = Depends(get_db)
-):
-    user_message_parts = [
-        types.Part(text=request.query),
-    ]
+async def search_generator(user_query: str, db: Session):
 
-    # Initial call to Gemini with all tools
+    """
+
+        A generator function that yields different states of the search process.
+
+        """
+
+        model = client.generative_model(MODEL_ID)
+
+        chat = model.start_chat()
+
+    
+
+    fetched_entities: List[EntityModel] = []
+
+    web_search_data: Optional[str] = None
+
+    final_summary: str = ""
+
+    
+
+    async def send_event(event_type: str, data: dict):
+
+        event = {"event": event_type, "data": data}
+
+        yield f"data: {json.dumps(event)}\n\n"
+
+        await asyncio.sleep(0.01)
+
     try:
-        gemini_response = await run_in_threadpool(
-            client.models.generate_content,
-            model=MODEL_ID,
-            contents=user_message_parts,
-            config=types.GenerateContentConfig(
-                tools=[get_entities_tool, google_search_tool],
-                safety_settings=None, # Temporarily disable safety settings for broader testing
-                temperature=0.5
-            )
+
+        response = await run_in_threadpool(
+
+            chat.send_message,
+
+            user_query,
+
+            tools=[get_entities_tool, google_search_tool]
+
         )
-        # Check if Gemini wants to call a function
-        if gemini_response.parts and gemini_response.parts[0].function_call:
-            function_call = gemini_response.parts[0].function_call
+
+        while response.function_calls:
+
+            function_call = response.function_calls[0]
+
             tool_name = function_call.name
-            tool_args = {k: v for k, v in function_call.args.items()} # Ensure args are mutable dict
+
+            tool_args = {k: v for k, v in function_call.args.items()}
+
             
+
             logger.info(f"Gemini requested tool call: {tool_name} with args: {tool_args}")
 
+            async for event in send_event("tool_call", {"name": tool_name, "args": tool_args}):
+
+                yield event
+
             tool_response_content = None
-            structured_results = []
 
             if tool_name == "get_entities_from_db":
+
                 db_query = tool_args.get("query", "")
-                if db_query:
-                    structured_results = get_entities_from_db(db_query, db)
-                    tool_response_content = json.dumps(structured_results)
-                else:
-                    tool_response_content = "No query provided for entity search."
-                
-                # Pass the structured results directly back to Gemini to get a summary
-                # And also include them in our FastAPI response
-                final_summary_response = await run_in_threadpool(
-                    client.models.generate_content,
-                    model=MODEL_ID,
-                    contents=[
-                        user_message_parts[0], # Original user query
-                        types.Part(
-                            function_response=types.FunctionResponse(
-                                name="get_entities_from_db",
-                                response={ "entities": structured_results } # Pass structured data back
-                            )
-                        ),
-                    ],
-                    config=types.GenerateContentConfig(
-                        tools=[get_entities_tool, google_search_tool], # Provide tools again
-                        safety_settings=None,
-                        temperature=0.5
-                    )
-                )
-                final_summary = final_summary_response.text if final_summary_response.text else "Gemini could not generate a summary for the database entities. Please check the model's response or try a different query."
-                return SearchResponse(summary=final_summary, results=structured_results)
+
+                db_results = await run_in_threadpool(get_entities_from_db, db_query, db)
+
+                fetched_entities.extend([EntityModel(**entity) for entity in db_results])
+
+                tool_response_content = {"entities": db_results}
+
+            
 
             elif tool_name == "google_web_search":
-                web_query = tool_args.get("query", "")
-                if web_query:
-                    web_search_result = google_web_search(web_query)
-                    tool_response_content = json.dumps({"search_result": web_search_result})
-                else:
-                    tool_response_content = "No query provided for web search."
-                
-                # Send web search result back to Gemini for summary
-                final_summary_response = await run_in_threadpool(
-                    client.models.generate_content,
-                    model=MODEL_ID,
-                    contents=[
-                        user_message_parts[0], # Original user query
-                        types.Part(
-                            function_response=types.FunctionResponse(
-                                name="google_web_search",
-                                response={ "result": web_search_result } # Pass search result back
-                            )
-                        )
-                    ],
-                    config=types.GenerateContentConfig(
-                        tools=[get_entities_tool, google_search_tool], # Provide tools again
-                        safety_settings=None,
-                        temperature=0.5
-                    )
-                )
-                final_summary = final_summary_response.text if final_summary_response.text else "Gemini could not generate a summary for the web search results. Please check the model's response or try a different query."
-                return SearchResponse(summary=final_summary, results=[]) # No structured cards from web search
 
-        # If Gemini did not call a function, it responded directly with text
-        final_summary = gemini_response.text
-        return SearchResponse(summary=final_summary, results=[])
+                web_query = tool_args.get("query", "")
+
+                web_search_result = await run_in_threadpool(google_web_search, web_query)
+
+                web_search_data = web_search_result
+
+                tool_response_content = {"result": web_search_result}
+
+            
+
+            async for event in send_event("tool_response", {"name": tool_name, "response": tool_response_content}):
+
+                yield event
+
+            response = await run_in_threadpool(
+
+                chat.send_message,
+
+                types.Part(function_response=types.FunctionResponse(name=tool_name, response=tool_response_content))
+
+            )
+
+        final_summary = response.text
+
+        async for event in send_event("final_summary", {"summary": final_summary}):
+
+            yield event
+
+        # --- Dynamic UI Generation ---
+
+        ui_generation_context = f"""
+
+        User Query: {user_query}
+
+        Summary: {final_summary}
+
+        Entities found: {json.dumps([ent.dict() for ent in fetched_entities]) if fetched_entities else "None"}
+
+        Web search results: {web_search_data if web_search_data else "None"}
+
+        Please provide a JSON list of UI components to render based on this.
+
+        """
+
+        
+
+        ui_response = await run_in_threadpool(
+
+            model.generate_content,
+
+            ui_generation_context,
+
+            generation_config=types.GenerationConfig(response_mime_type="application/json")
+
+        )
+
+        
+
+        try:
+
+            ui_json = json.loads(ui_response.text)
+
+            if "ui_components" in ui_json and isinstance(ui_json["ui_components"], list):
+
+                parsed_components = [UIComponent(**comp) for comp in ui_json["ui_components"]]
+
+                async for event in send_event("ui_components", {"components": [comp.dict() for comp in parsed_components]}):
+
+                    yield event
+
+            else:
+
+                async for event in send_event("ui_components", {"components": [{"component_type": "TextOutput", "data": {"text": final_summary}}]}):
+
+                    yield event
+
+        except (json.JSONDecodeError, TypeError) as e:
+
+            logger.error(f"Error parsing UI components from Gemini: {e}")
+
+            async for event in send_event("ui_components", {"components": [{"component_type": "TextOutput", "data": {"text": final_summary}}]}):
+
+                yield event
 
     except Exception as e:
-        logger.error(f"Error in Gemini interaction: {e}", exc_info=True)
-        # Check if the error is due to an invalid model name again
-        if "404 models/" in str(e) and "not found" in str(e):
-            raise HTTPException(status_code=500, detail=f"Gemini API error: Check model name and availability. Original error: {e}")
-        else:
-            raise HTTPException(status_code=500, detail=f"Gemini API error (unexpected): {e}")
+
+        logger.error(f"Error in search generator: {e}", exc_info=True)
+
+        async for event in send_event("error", {"detail": str(e)}):
+
+            yield event
+
+@router.post("")
+
+async def perform_intelligent_search_stream(
+
+    request: SearchRequest, db: Session = Depends(get_db)
+
+):
+
+    return StreamingResponse(
+
+        search_generator(request.query, db),
+
+        media_type="text/event-stream"
+
+    )

@@ -4,61 +4,652 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Light | Sales OS 2026</title>
+    
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #FAFAFA; color: #111827; overflow: hidden; -webkit-font-smoothing: antialiased; }
+        
+        /* Animations */
         .fade-enter { animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .slide-in-right { animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        
+        .toast-enter { animation: toast-slide 0.3s ease-out forwards; }
+        @keyframes toast-slide { from { opacity: 0; transform: translateY(20px) translateX(-50%); } to { opacity: 1; transform: translateY(0) translateX(-50%); } }
+
+        /* Component Styles */
         .dock-container { box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0,0,0,0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02), 0 0 0 1px rgba(0,0,0,0.05); }
         .floating-island { box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); }
+        
+        /* Map Styles */
         .map-container { background-color: #F1F5F9; position: relative; overflow: hidden; }
         .map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, 0.8) 2px, transparent 2px), linear-gradient(90deg, rgba(255, 255, 255, 0.8) 2px, transparent 2px); background-size: 60px 60px; opacity: 0.6; }
-        .map-grid::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.4) 1px, transparent 1px); background-size: 20px 20px; }
         .map-vignette { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 40%, rgba(241, 245, 249, 0.6) 100%); pointer-events: none; z-index: 5; }
         .radar-pulse { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(0, 71, 255, 0.05) 0%, transparent 70%); border-radius: 50%; animation: radar 3s infinite linear; pointer-events: none; z-index: 1; }
         @keyframes radar { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
         .marker-float { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .marker-float:hover { transform: translateY(-8px) scale(1.1); z-index: 50; }
-        .text-header { font-weight: 700; letter-spacing: -0.02em; }
-        .text-body { font-weight: 300; }
-        .text-label { font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; color: #9CA3AF; }
+        
+        /* Custom Inputs */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E5E5E5; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; margin-top: -6px; transition: transform 0.1s; }
         input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); border-color: #CBD5E1; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #F1F5F9; border-radius: 2px; }
+        
+        /* Typography & Utilities */
+        .text-header { font-weight: 700; letter-spacing: -0.02em; }
+        .text-label { font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; color: #9CA3AF; }
         .text-accent { color: #0047FF; }
         .bg-accent { background-color: #0047FF; }
         .border-accent { border-color: #0047FF; }
         .hover-accent:hover { background-color: #0036CC; }
-        .pill-selected { background-color: #EFF6FF; border-color: #BFDBFE; color: #0047FF; }
-        .toast-enter { animation: toast-slide 0.3s ease-out forwards; }
-        @keyframes toast-slide { from { opacity: 0; transform: translateY(20px) translateX(-50%); } to { opacity: 1; transform: translateY(0) translateX(-50%); } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #E5E5E5; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #D4D4D8; }
-        
-        /* WhatsApp Floating Widget Animation */
         .whatsapp-float { position: fixed; bottom: 24px; right: 24px; z-index: 40; animation: float-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes float-in { from { transform: scale(0) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-
+        
         /* Chart Animations */
         .chart-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2s ease-out forwards; }
         @keyframes draw { to { stroke-dashoffset: 0; } }
         .bar-grow { transform: scaleY(0); transform-origin: bottom; animation: grow 1s ease-out forwards; }
         @keyframes grow { to { transform: scaleY(1); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E5E5E5; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4D4D8; }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        const Icon = ({ name, size = 18, className = "" }) => {
+            React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
+
+        // --- Expanded Mock Data for "Real" Feel ---
+        const MOCK_PRODUCTS = [
+            { id: 'api', name: "Enterprise API", type: "Product" },
+            { id: 'pro', name: "Pro Plan Subscription", type: "Plan" },
+            { id: 'webinar', name: "Q3 Webinar: AI Sales", type: "Event" },
+            { id: 'audit', name: "Free Tech Audit", type: "Offer" }
+        ];
+        
+        const MOCK_CHANNELS = [
+            { id: 'email', icon: 'mail', label: 'Email', badge: null },
+            { id: 'linkedin', icon: 'linkedin', label: 'LinkedIn', badge: null },
+            { id: 'whatsapp', icon: 'message-circle', label: 'WhatsApp', badge: 'High Intent' },
+            { id: 'facebook', icon: 'facebook', label: 'Facebook', badge: null },
+            { id: 'instagram', icon: 'instagram', label: 'Instagram', badge: null }
+        ];
+
+        const MOCK_CAMPAIGNS = [
+            { id: 1, name: "Series B Founders - Brazil", status: true, volume: 45, sentiment: 'high', tips: null, leads: 124, channels: ['email', 'linkedin'], replies: 12, sent: 80 },
+            { id: 2, name: "Fintech CTOs - Outreach", status: true, volume: 20, sentiment: 'neutral', tips: "Reply rate dipping.", leads: 58, channels: ['email', 'whatsapp'], replies: 5, sent: 40 },
+            { id: 3, name: "Q1 Webinar Invite", status: false, volume: 0, sentiment: 'low', tips: null, leads: 200, channels: ['facebook', 'instagram'], replies: 0, sent: 0 },
+            { id: 4, name: "Enterprise Re-Engagement", status: false, volume: 0, sentiment: 'neutral', tips: null, leads: 450, channels: ['email'], replies: 0, sent: 0 }
+        ];
+
+        // Expanded Entity List for Better Search/Map Testing
+        const MOCK_ENTITIES = [
+            // People - VIPs
+            { id: 1, type: 'person', name: "Elena Silva", role: "VP Sales", company: "TechFlow", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena", status: "Active", stage: "Contacted", group: "VIP", coords: { x: 30, y: 40 }, source: "LinkedIn Sales Nav" },
+            { id: 2, type: 'person', name: "Marcus Chen", role: "Head of Growth", company: "Nubank", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus", status: "Active", stage: "Negotiation", group: "Fintech", coords: { x: 65, y: 25 }, source: "Apollo.io" },
+            { id: 5, type: 'person', name: "Julia Santos", role: "CTO", company: "Creditas", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Julia", status: "Active", stage: "Qualified", group: "VIP", coords: { x: 28, y: 45 }, source: "Internal DB" },
+            
+            // People - Regular
+            { id: 3, type: 'person', name: "Sarah Jones", role: "CRO", company: "Vtex", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah", status: "Unassigned", stage: "New", group: "Retail", coords: { x: 20, y: 70 }, source: "Clearbit" },
+            { id: 6, type: 'person', name: "Roberto Alvez", role: "Founder", company: "Loggi", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Roberto", status: "New", stage: "New", group: "Logistics", coords: { x: 40, y: 60 }, source: "LinkedIn" },
+            { id: 7, type: 'person', name: "Ana Pires", role: "Director of Ops", company: "Ifood", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ana", status: "Active", stage: "Contacted", group: "Logistics", coords: { x: 42, y: 62 }, source: "Apollo.io" },
+            { id: 8, type: 'person', name: "Carlos Mendez", role: "VP Eng", company: "Hotmart", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos", status: "Stale", stage: "Qualified", group: "Retail", coords: { x: 22, y: 72 }, source: "Clearbit" },
+            
+            // Businesses
+            { id: 101, type: 'business', name: "TechFlow HQ", industry: "SaaS Platform", location: "São Paulo", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=TF", status: "Target", stage: "Qualified", group: "High Growth", coords: { x: 32, y: 38 }, source: "Google Places" },
+            { id: 102, type: 'business', name: "Nubank Office", industry: "Fintech", location: "São Paulo", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=NB", status: "Customer", stage: "Closed", group: "Enterprise", coords: { x: 62, y: 22 }, source: "Google Places" },
+            { id: 103, type: 'business', name: "Mercado Libre", industry: "E-commerce", location: "Buenos Aires", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=ML", status: "New", stage: "New", group: "Enterprise", coords: { x: 80, y: 60 }, source: "Internal DB" },
+            { id: 104, type: 'business', name: "Stone Pagamentos", industry: "Fintech", location: "São Paulo", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=ST", status: "Customer", stage: "Closed", group: "Enterprise", coords: { x: 55, y: 30 }, source: "Salesforce" },
+            { id: 105, type: 'business', name: "Gympass", industry: "Wellness", location: "São Paulo", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=GP", status: "Target", stage: "Negotiation", group: "High Growth", coords: { x: 45, y: 50 }, source: "Google Places" }
+        ];
+
+        const MOCK_INBOX = [
+            { id: 1, category: 'message', type: 'whatsapp', title: 'Elena Silva', preview: 'Thanks for the docs! When can we chat?', time: '15m ago', unread: true, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena" },
+            { id: 2, category: 'system', type: 'alert', title: 'Import Complete', preview: '24 records added from CSV.', time: '2m ago', unread: true, icon: 'database' },
+            { id: 3, category: 'message', type: 'linkedin', title: 'Marcus Chen', preview: 'Sure, lets connect next week.', time: '1h ago', unread: false, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus" },
+            { id: 4, category: 'system', type: 'warning', title: 'Campaign Paused', preview: 'Series B Founders reached daily limit.', time: '3h ago', unread: false, icon: 'alert-triangle' },
+            { id: 5, category: 'message', type: 'whatsapp', title: 'Julia Santos', preview: 'Can you send the API specs?', time: '4h ago', unread: false, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Julia" },
+            { id: 6, category: 'system', type: 'info', title: 'Weekly Report', preview: 'Your campaign summary is ready.', time: '5h ago', unread: false, icon: 'file-text' }
+        ];
+
+        const MOCK_CHAT_HISTORY = [
+            { id: 1, sender: 'me', text: "Hi Elena, saw you're scaling at TechFlow. Released docs for Enterprise API. Want PDF?", time: '10:42 AM' },
+            { id: 2, sender: 'them', text: "Thanks for the docs! When can we chat?", time: '10:55 AM' }
+        ];
+
+        // --- Common Components ---
+        const Toast = ({ message, visible }) => {
+            if (!visible) return null;
+            return <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-[60] bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 toast-enter"><div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div><span className="text-sm font-medium">{message}</span></div>;
+        };
+
+        const Dock = ({ activeTab, onTabChange, onDataClick }) => {
+            const tabs = [{ id: 'search', icon: 'search', label: 'Search' }, { id: 'leads', icon: 'users', label: 'Entities' }, { id: 'campaigns', icon: 'layers', label: 'Campaigns' }, { id: 'inbox', icon: 'inbox', label: 'Inbox', badge: 2 }, { id: 'insights', icon: 'bar-chart-2', label: 'Insights' }];
+            return (
+                <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+                    <div className="dock-container bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl px-3 py-2 flex items-center gap-2">
+                        {tabs.map(tab => (
+                            <button key={tab.id} onClick={() => onTabChange(tab.id)} className={`relative group p-3 rounded-xl transition-all duration-300 ease-out flex flex-col items-center justify-center ${activeTab === tab.id ? 'bg-gray-100 scale-105' : 'hover:bg-gray-50 hover:scale-105'}`}>
+                                <div className={`relative ${activeTab === tab.id ? 'text-black' : 'text-gray-500 group-hover:text-black'}`}><Icon name={tab.icon} size={22} />{tab.badge && <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">{tab.badge}</span>}</div>
+                                <span className="absolute -top-10 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tab.label}</span>
+                                {activeTab === tab.id && <div className="absolute -bottom-1 w-1 h-1 bg-black rounded-full"></div>}
+                            </button>
+                        ))}
+                        <div className="w-px h-8 bg-gray-200 mx-1"></div>
+                        <button onClick={onDataClick} className="relative group p-3 rounded-xl transition-all duration-300 ease-out flex flex-col items-center justify-center hover:bg-gray-50 hover:scale-105">
+                            <div className="relative text-gray-500 group-hover:text-black"><Icon name="database" size={22} /></div>
+                            <span className="absolute -top-10 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Data Sources</span>
+                        </button>
+                        <button onClick={() => onTabChange('settings')} className={`relative group p-3 rounded-xl transition-all duration-300 ease-out flex flex-col items-center justify-center ${activeTab === 'settings' ? 'bg-gray-100 scale-105' : 'hover:bg-gray-50 hover:scale-105'}`}>
+                            <div className={`relative ${activeTab === 'settings' ? 'text-black' : 'text-gray-500 group-hover:text-black'}`}><Icon name="settings" size={22} /></div>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Data & Profile Panels ---
+        const DataIngestionPanel = ({ isOpen, onClose, showToast, onToggleWidget }) => {
+            const [activeCategory, setActiveCategory] = useState('social'); 
+            const [connections, setConnections] = useState({ google: false, meta: false, whatsapp: false, salesforce: false, totvs: false, sap: false });
+            
+            const toggleConnection = (key) => {
+                const newState = !connections[key];
+                setConnections({ ...connections, [key]: newState });
+                if (newState) {
+                    showToast(`${key.charAt(0).toUpperCase() + key.slice(1)} Connected`);
+                    if (key === 'whatsapp' && onToggleWidget) onToggleWidget(true);
+                } else {
+                    if (key === 'whatsapp' && onToggleWidget) onToggleWidget(false);
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="absolute inset-y-0 right-0 w-[480px] bg-white shadow-2xl border-l border-gray-100 z-[100] slide-in-right flex flex-col">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <h3 className="text-header text-lg text-gray-900">Integrations Hub</h3>
+                        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"><Icon name="x" size={18} /></button>
+                    </div>
+                    <div className="flex border-b border-gray-100 px-6">
+                        <button onClick={() => setActiveCategory('social')} className={`py-3 mr-6 text-xs font-medium border-b-2 transition-colors ${activeCategory === 'social' ? 'border-black text-black' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>Social & Identity</button>
+                        <button onClick={() => setActiveCategory('enterprise')} className={`py-3 text-xs font-medium border-b-2 transition-colors ${activeCategory === 'enterprise' ? 'border-black text-black' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>Enterprise & ERP</button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                        {activeCategory === 'social' && (
+                            <div className="space-y-8 fade-enter">
+                                <div>
+                                    <div className="text-label mb-3 flex items-center gap-2"><Icon name="fingerprint" size={14}/> Identity & Auth</div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center"><img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" /></div>
+                                                <div><div className="text-sm font-medium text-gray-900">Google SSO</div><div className="text-[10px] text-gray-500">OAuth 2.0 • Profile Enrichment</div></div>
+                                            </div>
+                                            <button onClick={() => toggleConnection('google')} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${connections.google ? 'bg-green-500' : 'bg-gray-200'}`}><span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${connections.google ? 'translate-x-5' : 'translate-x-1'}`}/></button>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white"><Icon name="facebook" size={16} /></div>
+                                                <div><div className="text-sm font-medium text-gray-900">Facebook Login</div><div className="text-[10px] text-gray-500">Identity • Permissions</div></div>
+                                            </div>
+                                            <button onClick={() => toggleConnection('meta')} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${connections.meta ? 'bg-green-500' : 'bg-gray-200'}`}><span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${connections.meta ? 'translate-x-5' : 'translate-x-1'}`}/></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-label mb-3 flex items-center gap-2"><Icon name="message-circle" size={14}/> Communication</div>
+                                    <div className="p-4 border border-green-100 bg-green-50/30 rounded-xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white"><Icon name="message-circle" size={16} /></div>
+                                            <div><div className="text-sm font-medium text-gray-900">WhatsApp Widget</div><div className="text-[10px] text-gray-500">Floating Chat • Support</div></div>
+                                        </div>
+                                        <button onClick={() => toggleConnection('whatsapp')} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${connections.whatsapp ? 'bg-green-500' : 'bg-gray-200'}`}><span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${connections.whatsapp ? 'translate-x-5' : 'translate-x-1'}`}/></button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-label mb-3 flex items-center gap-2"><Icon name="eye" size={14}/> Invisible Tracking</div>
+                                    <div className="p-4 border border-gray-100 rounded-xl">
+                                        <div className="flex justify-between items-center mb-2"><span className="text-sm font-medium">Meta Pixel / Google Tag</span><span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span></div>
+                                        <div className="text-[10px] text-gray-400 font-mono bg-gray-50 p-2 rounded border border-gray-200">
+                                            {'<script>fbq("track", "PageView");' + '</' + 'script>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeCategory === 'enterprise' && (
+                            <div className="space-y-8 fade-enter">
+                                <div>
+                                    <div className="text-label mb-3 flex items-center gap-2"><Icon name="users" size={14}/> CRM & Sales</div>
+                                    <div className={`flex items-center justify-between p-4 border rounded-xl transition-all ${connections.salesforce ? 'border-blue-200 bg-blue-50/20' : 'border-gray-100'}`}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white"><Icon name="cloud" size={16} /></div>
+                                            <div><div className="text-sm font-medium text-gray-900">Salesforce</div><div className="text-[10px] text-gray-500">Web-to-Lead • Sync</div></div>
+                                        </div>
+                                        <button onClick={() => toggleConnection('salesforce')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${connections.salesforce ? 'text-blue-600 bg-blue-100' : 'bg-black text-white hover:bg-gray-800'}`}>{connections.salesforce ? 'Connected' : 'Connect OAuth'}</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-label mb-3 flex items-center gap-2"><Icon name="server" size={14}/> ERP & Logistics</div>
+                                    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-[10px]">T</div>
+                                            <div><div className="text-sm font-medium text-gray-900">TOTVS (Protheus)</div><div className="text-[10px] text-gray-500">Middleware Required • SOAP/REST</div></div>
+                                        </div>
+                                        <button onClick={() => toggleConnection('totvs')} className={`px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 ${connections.totvs ? 'text-orange-600 border-orange-200 bg-orange-50' : 'text-gray-600'}`}>{connections.totvs ? 'Syncing...' : 'Configure'}</button>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center text-white font-bold text-[10px]">SAP</div>
+                                            <div><div className="text-sm font-medium text-gray-900">SAP S/4HANA</div><div className="text-[10px] text-gray-500">Inventory Check • Order Push</div></div>
+                                        </div>
+                                        <button onClick={() => toggleConnection('sap')} className={`px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 ${connections.sap ? 'text-blue-800 border-blue-200 bg-blue-50' : 'text-gray-600'}`}>{connections.sap ? 'Active' : 'Link API'}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                        <div className="text-xs text-center text-gray-400 flex items-center justify-center gap-2">
+                            <Icon name="shield" size={12} /> <span>GDPR & LGPD Compliant Data Processing</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProfilePanel = ({ isOpen, onClose, onViewChange }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="absolute inset-y-0 right-0 w-80 bg-white shadow-2xl border-l border-gray-100 z-[100] slide-in-right flex flex-col">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/30">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Profile" className="w-full h-full object-cover" /></div>
+                            <div><h3 className="text-sm font-bold text-gray-900">Felix Admin</h3><p className="text-xs text-gray-500">Workspace Owner</p></div>
+                        </div>
+                        <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-md text-gray-400 transition-colors"><Icon name="x" size={16} /></button>
+                    </div>
+                    <div className="flex-1 p-4 space-y-1">
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">Account</div>
+                        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors text-left"><Icon name="user" size={16} /> My Profile</button>
+                        <button onClick={() => { onViewChange('settings'); onClose(); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors text-left"><Icon name="settings" size={16} /> Workspace Settings</button>
+                        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors text-left"><Icon name="credit-card" size={16} /> Billing</button>
+                        <div className="h-px bg-gray-100 my-2 mx-3"></div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">Support</div>
+                        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors text-left"><Icon name="help-circle" size={16} /> Help Center</button>
+                        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors text-left"><Icon name="info" size={16} /> About Nexus</button>
+                    </div>
+                    <div className="p-4 border-t border-gray-100"><button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"><Icon name="log-out" size={14} /> Log Out</button><div className="text-center mt-3 text-[10px] text-gray-400">Nexus Light v2.4.0</div></div>
+                </div>
+            );
+        };
+
+        // --- Views ---
+        const MapView = ({ entities, selected, onToggleSelect, showPeople, showCompanies, setShowPeople, setShowCompanies }) => {
+            const [hovered, setHovered] = useState(null);
+            const filtered = entities.filter(e => { if (e.type === 'person' && !showPeople) return false; if (e.type === 'business' && !showCompanies) return false; return true; });
+            return (
+                <div className="w-full h-[500px] rounded-3xl relative overflow-hidden map-container shadow-sm border border-gray-200">
+                    <div className="map-grid"></div><div className="map-vignette"></div><div className="radar-pulse"></div>
+                    <div className="absolute top-6 left-6 flex gap-2 z-20 bg-white/80 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-white/50">
+                        <button onClick={() => setShowPeople(!showPeople)} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all ${showPeople ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}><div className={`w-2 h-2 rounded-full ${showPeople ? 'bg-accent' : 'bg-gray-300'}`}></div>People</button>
+                        <button onClick={() => setShowCompanies(!showCompanies)} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all ${showCompanies ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}><div className={`w-2 h-2 rounded-sm ${showCompanies ? 'bg-purple-500' : 'bg-gray-300'}`}></div>Companies</button>
+                    </div>
+                    {filtered.map(entity => { const isSelected = selected.includes(entity.id); return <div key={entity.id} className="absolute cursor-pointer marker-float" style={{ left: `${entity.coords.x}%`, top: `${entity.coords.y}%` }} onMouseEnter={() => setHovered(entity.id)} onMouseLeave={() => setHovered(null)} onClick={() => onToggleSelect(entity.id)}><div className={`transform -translate-x-1/2 -translate-y-full`}><div className="relative flex flex-col items-center"><div className={`relative z-10 transition-all duration-300 ${isSelected ? 'scale-110' : 'scale-100'}`}><div className={`w-10 h-10 rounded-full p-0.5 bg-white shadow-lg flex items-center justify-center overflow-hidden transition-all ${isSelected ? 'ring-2 ring-accent ring-offset-2' : ''} ${entity.type === 'business' ? 'rounded-xl' : 'rounded-full'}`}><img src={entity.avatar} className={`w-full h-full object-cover ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`} /></div>{isSelected && <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full border border-white flex items-center justify-center text-white z-20"><Icon name="check" size={10} strokeWidth={3} /></div>}</div><div className={`w-px h-3 bg-gray-300 mt-px ${isSelected ? 'h-4 bg-accent' : ''}`}></div><div className="w-3 h-1 bg-black/10 rounded-full blur-[1px]"></div></div>{(hovered === entity.id || isSelected) && <div className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-xl p-3 rounded-2xl shadow-xl border border-gray-100 w-56 z-50 text-left fade-enter"><div className="flex items-start gap-3"><div className={`w-8 h-8 flex-shrink-0 bg-gray-50 overflow-hidden ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}><img src={entity.avatar} className="w-full h-full object-cover" /></div><div className="flex-1 min-w-0"><div className="text-xs font-bold text-gray-900 truncate">{entity.name}</div><div className="text-[10px] text-gray-500 leading-tight mt-0.5 truncate">{entity.type === 'person' ? `${entity.role}` : entity.industry}</div></div></div></div>}</div></div>; })}
+                </div>
+            );
+        };
+
+        const SearchView = ({ onSelectLeads, hasSelection, onAction }) => {
+            const [query, setQuery] = useState(""); 
+            const [hasSearched, setHasSearched] = useState(false); 
+            const [selected, setSelected] = useState([]); 
+            const [viewMode, setViewMode] = useState('list'); 
+            const [showPeople, setShowPeople] = useState(true); 
+            const [showCompanies, setShowCompanies] = useState(true);
+
+            const handleSearch = (e) => { 
+                if (e.key === 'Enter') { 
+                    setHasSearched(true); 
+                    if (query.toLowerCase().includes("around me") || query.toLowerCase().includes("map")) setViewMode('map'); 
+                } 
+            };
+            
+            const handleSuggested = (suggestion) => {
+                setQuery(suggestion);
+                setHasSearched(true);
+                if (suggestion.toLowerCase().includes("around me")) setViewMode('map');
+            };
+
+            const toggleSelect = (id) => { 
+                if (selected.includes(id)) setSelected(selected.filter(i => i !== id)); 
+                else setSelected([...selected, id]); 
+            };
+            
+            // Real Search Filtering Logic
+            const filteredEntities = MOCK_ENTITIES.filter(e => {
+                if (!query) return true;
+                const searchLower = query.toLowerCase();
+                return e.name.toLowerCase().includes(searchLower) || 
+                       (e.role && e.role.toLowerCase().includes(searchLower)) ||
+                       (e.company && e.company.toLowerCase().includes(searchLower)) ||
+                       (e.industry && e.industry.toLowerCase().includes(searchLower)) ||
+                       e.group.toLowerCase().includes(searchLower);
+            });
+
+            const people = filteredEntities.filter(e => e.type === 'person'); 
+            const companies = filteredEntities.filter(e => e.type === 'business');
+            
+            const EntityCard = ({ entity }) => <div onClick={() => toggleSelect(entity.id)} className={`group flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${selected.includes(entity.id) ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'}`}><div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selected.includes(entity.id) ? 'bg-accent border-accent' : 'border-gray-300'}`}>{selected.includes(entity.id) && <Icon name="check" size={12} className="text-white" />}</div><div className="relative"><img src={entity.avatar} className={`w-10 h-10 bg-gray-100 ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`} /><div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border border-gray-100 shadow-sm"><Icon name={entity.type === 'business' ? 'building-2' : 'user'} size={10} className="text-gray-400" /></div></div><div className="flex-1"><div className="flex justify-between items-start"><h4 className={`font-medium ${selected.includes(entity.id) ? 'text-accent' : 'text-gray-900'}`}>{entity.name}</h4><span className="text-[9px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded border border-gray-100 flex items-center gap-1"><Icon name="globe" size={8} /> {entity.source}</span></div><p className="text-sm text-gray-500">{entity.type === 'person' ? `${entity.role} @ ${entity.company}` : `${entity.industry} • ${entity.location}`}</p></div></div>;
+            
+            return <div className="w-full max-w-4xl mx-auto pt-32 px-6 flex flex-col items-center relative h-full"><div className={`transition-all duration-500 w-full ${hasSearched ? 'transform -translate-y-0' : 'transform translate-y-20'}`}><div className="relative group shadow-sm hover:shadow-md transition-shadow rounded-2xl bg-white"><div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none"><Icon name="search" size={20} className="text-gray-400" /></div><input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={handleSearch} className="block w-full pl-14 pr-6 py-4 bg-transparent border border-gray-200 rounded-2xl text-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 transition-all" placeholder="Describe your ideal lead..." autoFocus /><div className="absolute right-4 top-4 flex items-center gap-2"><span className="text-xs text-gray-400 border border-gray-100 px-2 py-1 rounded-md bg-gray-50">⌘K</span></div></div>{!hasSearched && <div className="mt-6 flex flex-wrap justify-center gap-3 fade-enter" style={{animationDelay: '0.1s'}}><button onClick={() => handleSuggested("Fintech")} className="px-3 py-1.5 rounded-full border border-gray-100 bg-white text-xs text-gray-500 hover:text-black hover:border-gray-300 transition-colors shadow-sm">Fintech</button><button onClick={() => handleSuggested("Companies around me")} className="px-3 py-1.5 rounded-full border border-gray-100 bg-white text-xs text-gray-500 hover:text-black hover:border-gray-300 transition-colors shadow-sm">Companies around me</button></div>}</div>{hasSearched && <div className="w-full mt-8 fade-enter pb-32"><div className="flex justify-between items-end mb-6 px-2"><div><h3 className="text-sm font-medium text-gray-500">Search Results</h3><span className="text-xs text-gray-400">{filteredEntities.length} matches found</span></div><div className="bg-gray-100 p-1 rounded-lg flex gap-1"><button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}><Icon name="list" size={16} /></button><button onClick={() => setViewMode('map')} className={`p-1.5 rounded-md transition-all ${viewMode === 'map' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}><Icon name="map" size={16} /></button></div></div>{viewMode === 'list' ? <div className="space-y-8">{people.length > 0 && <div><h4 className="text-label mb-3 pl-2 flex items-center gap-2"><Icon name="users" size={12} /> People ({people.length})</h4><div className="grid grid-cols-1 gap-3">{people.map(entity => <EntityCard key={entity.id} entity={entity} />)}</div></div>}{companies.length > 0 && <div><h4 className="text-label mb-3 pl-2 flex items-center gap-2"><Icon name="building-2" size={12} /> Companies ({companies.length})</h4><div className="grid grid-cols-1 gap-3">{companies.map(entity => <EntityCard key={entity.id} entity={entity} />)}</div></div>}</div> : <MapView entities={filteredEntities} selected={selected} onToggleSelect={toggleSelect} showPeople={showPeople} showCompanies={showCompanies} setShowPeople={setShowPeople} setShowCompanies={setShowCompanies} />}</div>}{selected.length > 0 && <div className="absolute bottom-32 floating-island bg-white p-2 rounded-2xl flex items-center gap-2 fade-enter border border-gray-100 z-40"><div className="px-4 py-2 font-medium text-sm text-gray-900 border-r border-gray-100">{selected.length} selected</div><button onClick={() => onAction('config', selected)} className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 font-medium">Build Campaign</button></div>}</div>;
+        };
+
+        const ConfigView = ({ selectedCount, onGenerate }) => {
+            const [selectedChannels, setSelectedChannels] = useState([]); const [selectedProduct, setSelectedProduct] = useState("");
+            const toggleChannel = (id) => { if (selectedChannels.includes(id)) setSelectedChannels(selectedChannels.filter(c => c !== id)); else setSelectedChannels([...selectedChannels, id]); };
+            return <div className="h-full w-full flex items-center justify-center fade-enter relative z-40"><div className="absolute inset-0 bg-white/60 backdrop-blur-md z-0"></div><div className="bg-white w-full max-w-lg rounded-2xl floating-island p-8 relative z-10"><div className="text-center mb-8"><h2 className="text-2xl text-header text-gray-900">Strategy Configuration</h2><p className="text-sm text-gray-500 mt-2">Targeting {selectedCount} entities</p></div><div className="mb-8"><h3 className="text-label mb-4 text-center">Where are we connecting?</h3><div className="flex justify-center gap-4">{MOCK_CHANNELS.map(channel => <div key={channel.id} className="relative group"><button onClick={() => toggleChannel(channel.id)} className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all duration-200 ${selectedChannels.includes(channel.id) ? 'bg-accent border-accent text-white shadow-lg shadow-blue-500/30' : 'bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600'}`}><Icon name={channel.icon} size={20} /></button>{channel.badge && <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{channel.badge}</span>}</div>)}</div></div><div className="mb-8"><h3 className="text-label mb-4 text-center">What are we pitching?</h3><div className="relative max-w-xs mx-auto"><Icon name="package" size={16} className="absolute left-3 top-3.5 text-gray-400" /><select className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 appearance-none text-gray-700" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}><option value="" disabled>Select Product or Offer...</option>{MOCK_PRODUCTS.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select><Icon name="chevron-down" size={16} className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" /></div></div><button onClick={() => onGenerate(selectedChannels, selectedProduct)} disabled={selectedChannels.length === 0 || !selectedProduct} className={`w-full py-4 rounded-xl font-medium text-white transition-all ${selectedChannels.length > 0 && selectedProduct ? 'bg-accent hover:bg-blue-700 shadow-xl shadow-blue-500/20' : 'bg-gray-200 cursor-not-allowed text-gray-400'}`}>Generate Drafts</button></div></div>;
+        };
+
+        const FlowView = ({ config, onPublish }) => {
+            const [activeTab, setActiveTab] = useState(config.channels[0] || 'email');
+            const selectedEntities = config.leads.map(id => MOCK_ENTITIES.find(e => e.id === id)).filter(Boolean);
+            const getContentForChannel = (channel) => { if (channel === 'whatsapp') return <div className="bg-gray-100 p-4 rounded-lg rounded-tl-none max-w-sm"><p className="text-sm text-gray-800">Hi <span className="text-blue-600 bg-blue-100 px-1 rounded">{'{{FirstName}}'}</span>, saw you're scaling at <span className="text-blue-600 bg-blue-100 px-1 rounded">{'{{Company}}'}</span>. Released docs for {config.product}. Want PDF?</p><span className="text-[10px] text-gray-400 block mt-1 text-right">10:42 AM</span></div>; if (channel === 'linkedin') return <div className="bg-white border border-gray-200 rounded-lg p-4 max-w-md shadow-sm"><p className="text-sm text-gray-700 leading-relaxed">Hi <span className="text-blue-600 bg-blue-50 px-1 rounded">{'{{FirstName}}'}</span>, <br/>Just saw the news about <span className="text-blue-600 bg-blue-50 px-1 rounded">{'{{Company}}'}</span>. Impressive growth.<br/>Open to connecting?</p></div>; return <div className="space-y-6 text-gray-700 font-light leading-relaxed text-lg"><div className="mb-8 pb-4 border-b border-gray-100"><input type="text" defaultValue={`Opportunity: {{Company}} x ${config.product}`} className="w-full text-xl font-medium text-gray-900 placeholder-gray-300 focus:outline-none" /></div><p>Hi <span className="bg-blue-50 text-blue-600 px-1 rounded border border-blue-100 font-normal">{'{{FirstName}}'}</span>,</p><p>I've been following <span className="bg-blue-50 text-blue-600 px-1 rounded border border-blue-100 font-normal">{'{{Company}}'}</span>'s trajectory.</p><p>Best,<br/>Felix</p></div>; };
+            return <div className="h-full flex fade-enter"><div className="w-80 bg-white border-r border-gray-200 p-6 flex flex-col h-full z-10"><h2 className="text-label mb-6">Context</h2><div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6"><div className="text-xs text-gray-500 uppercase mb-1">Product</div><div className="font-medium text-blue-700">{config.product}</div></div><div className="flex-1 overflow-y-auto space-y-3">{selectedEntities.map((entity, idx) => <div key={entity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg group relative"><div className="relative"><div className={`w-8 h-8 flex-shrink-0 bg-gray-100 overflow-hidden ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}><img src={entity.avatar} className="w-full h-full object-cover" /></div><div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white ${idx === 0 ? 'bg-green-500' : 'bg-yellow-400'}`}></div></div><div className="overflow-hidden"><div className="text-sm font-medium text-gray-900 truncate">{entity.name}</div><div className="text-xs text-gray-500 truncate">{entity.type === 'person' ? entity.company : entity.industry}</div></div></div>)}</div></div><div className="flex-1 bg-[#FAFAFA] p-12 flex flex-col relative"><div className="flex gap-2 mb-0 ml-1">{config.channels.map(channelId => { const ch = MOCK_CHANNELS.find(c => c.id === channelId); return <button key={channelId} onClick={() => setActiveTab(channelId)} className={`px-6 py-3 rounded-t-xl text-sm font-medium flex items-center gap-2 border-t border-x transition-all relative top-[1px] z-10 ${activeTab === channelId ? 'bg-white border-gray-200 text-gray-900' : 'bg-gray-100 border-transparent text-gray-500 hover:text-gray-700'}`}><Icon name={ch.icon} size={14} /> {ch.label}</button>; })}</div><div className="max-w-3xl w-full bg-white min-h-[600px] shadow-sm border border-gray-200 rounded-b-xl rounded-tr-xl p-12 relative z-0">{getContentForChannel(activeTab)}</div><div className="absolute top-6 right-8"><button onClick={onPublish} className="bg-black text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-lg shadow-black/10 flex items-center gap-2">Publish Campaign <Icon name="arrow-right" size={14} /></button></div></div></div>;
+        };
+
+        const CampaignsView = () => {
+            const [expandedRow, setExpandedRow] = useState(null); const [campaigns, setCampaigns] = useState(MOCK_CAMPAIGNS);
+            const toggleExpand = (id) => setExpandedRow(expandedRow === id ? null : id);
+            return <div className="w-full max-w-6xl mx-auto pt-24 px-8 fade-enter h-full overflow-y-auto pb-32"><header className="mb-12"><h1 className="text-3xl text-header text-gray-900">Active Operations</h1></header><div className="w-full space-y-4">{campaigns.map(camp => <div key={camp.id} className="bg-white rounded-xl card-shadow border border-transparent hover:border-gray-100 overflow-hidden transition-all"><div className="grid grid-cols-12 gap-4 items-center p-6 cursor-pointer" onClick={() => toggleExpand(camp.id)}><div className="col-span-4"><h3 className="font-medium text-gray-900">{camp.name}</h3><span className="text-xs text-gray-400">{camp.leads} leads</span></div><div className="col-span-2 flex gap-2">{camp.channels.map(c => <div key={c} className="p-1.5 rounded-md bg-gray-100 text-gray-500"><Icon name={MOCK_CHANNELS.find(ch => ch.id === c).icon} size={14} /></div>)}</div><div className="col-span-4"><div className="flex flex-col gap-1"><div className="flex items-center justify-between text-[10px] text-gray-400 uppercase tracking-wider font-medium"><span>Progress</span><span className="text-gray-900">{camp.sent}/{camp.leads} Sent</span></div><div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden flex"><div className="h-full bg-gray-800" style={{width: `${(camp.sent / camp.leads) * 100}%`}}></div><div className="h-full bg-green-500" style={{width: `${(camp.replies / camp.leads) * 100}%`}}></div></div><div className="flex justify-end gap-3 text-[9px] text-gray-400 mt-0.5"><span className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div> Sent via SendGrid</span>{camp.replies > 0 && <span className="flex items-center gap-1 text-green-600"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> {camp.replies} Replies</span>}</div></div></div><div className="col-span-2 text-right text-gray-400"><Icon name={expandedRow === camp.id ? "chevron-up" : "chevron-down"} size={16} /></div></div>{expandedRow === camp.id && <div className="bg-gray-50 px-6 py-6 border-t border-gray-100 grid grid-cols-2 gap-8">{camp.channels.map(c => <div key={c} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><Icon name={MOCK_CHANNELS.find(ch => ch.id === c).icon} size={16} className="text-gray-500" /><span className="text-sm font-medium text-gray-900 capitalize">{c} Config</span></div><div className="relative inline-flex h-5 w-9 items-center rounded-full bg-accent cursor-pointer"><span className="translate-x-4 inline-block h-3 w-3 transform rounded-full bg-white transition-transform"/></div></div><input type="range" className="w-full" /></div>)}</div>}</div>)}</div></div>;
+        };
+
+        const EntityKanbanBoard = ({ entities, onDrop }) => {
+            const columns = ['New', 'Qualified', 'Contacted', 'Negotiation', 'Closed'];
+            const handleDragStart = (e, id) => { e.dataTransfer.setData('entityId', id); };
+            const handleDragOver = (e) => { e.preventDefault(); };
+            const handleDrop = (e, stage) => { e.preventDefault(); const id = parseInt(e.dataTransfer.getData('entityId'), 10); if (id) onDrop(id, stage); };
+            return <div className="flex gap-4 h-full overflow-x-auto pb-4 px-2">{columns.map(stage => { const items = entities.filter(e => e.stage === stage); return <div key={stage} className="min-w-[280px] w-72 flex-shrink-0 flex flex-col bg-gray-50/50 rounded-xl border border-gray-100/50 h-full" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, stage)}><div className="p-3 border-b border-gray-100 flex justify-between items-center"><h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest">{stage}</h4><span className="bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded text-[10px] font-medium">{items.length}</span></div><div className="flex-1 p-2 space-y-2 overflow-y-auto">{items.map(entity => <div key={entity.id} draggable onDragStart={(e) => handleDragStart(e, entity.id)} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all group"><div className="flex items-start gap-3"><div className={`w-8 h-8 flex-shrink-0 bg-gray-100 overflow-hidden ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}><img src={entity.avatar} className="w-full h-full object-cover" /></div><div className="min-w-0"><div className="text-sm font-medium text-gray-900 truncate">{entity.name}</div><div className="text-xs text-gray-500 truncate">{entity.type === 'person' ? entity.company : entity.industry}</div></div></div><div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center opacity-60 group-hover:opacity-100 transition-opacity"><span className="text-[10px] text-gray-400">{entity.source}</span><span className={`text-[9px] px-1.5 py-0.5 rounded border ${entity.group === 'VIP' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>{entity.group}</span></div></div>)}</div></div> })}</div>;
+        };
+
+        const EntitiesView = ({ showToast }) => {
+            const [activeGroup, setActiveGroup] = useState('all'); const [typeFilter, setTypeFilter] = useState('all'); const [activeActionId, setActiveActionId] = useState(null); const [viewMode, setViewMode] = useState('list'); const [entities, setEntities] = useState(MOCK_ENTITIES);
+            const groups = [{ id: 'all', label: 'All Entities', count: entities.length }, { id: 'vip', label: 'VIP / High Value', count: entities.filter(e => e.group === 'VIP').length }, { id: 'new', label: 'Added This Week', count: 12 }, { id: 'stale', label: 'Needs Attention', count: 8 }, { id: 'archived', label: 'Archived', count: 320 }];
+            
+            // Updated Filtering Logic for Entities
+            const filteredEntities = entities.filter(e => { 
+                // Group Filter (VIP, etc)
+                if (activeGroup !== 'all') {
+                    if (activeGroup === 'vip' && e.group !== 'VIP') return false;
+                    // Add other group logic if needed (new, stale based on mock props)
+                }
+                // Type Filter (Person vs Business)
+                if (typeFilter !== 'all' && e.type !== typeFilter) return false; 
+                return true; 
+            });
+
+            const handleAction = (action, entity) => { setActiveActionId(null); showToast(`${action} for ${entity.name}`); };
+            const handleStageDrop = (id, newStage) => { setEntities(prev => prev.map(e => e.id === id ? { ...e, stage: newStage } : e)); if (newStage === 'Contacted' || newStage === 'Qualified') { showToast(`Moved to ${newStage}. Log this interaction?`); } else { showToast(`Updated stage to ${newStage}`); } };
+            
+            return <div className="flex h-full fade-enter pt-12"><div className="w-64 bg-white border-r border-gray-200 p-6 flex flex-col h-full z-10 pt-16"><div className="flex items-center justify-between mb-8"><h2 className="text-label">Segments</h2><button className="text-gray-400 hover:text-black"><Icon name="filter" size={14}/></button></div><div className="space-y-1">{groups.map(group => <button key={group.id} onClick={() => setActiveGroup(group.id)} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${activeGroup === group.id ? 'bg-gray-100 text-black font-medium' : 'text-gray-500 hover:bg-gray-50'}`}><span>{group.label}</span><span className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">{group.count}</span></button>)}</div><div className="mt-8 pt-6 border-t border-gray-100"><h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Tags</h2><div className="flex flex-wrap gap-2"><span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">#Fintech</span><span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">#SeriesB</span><span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">#SaoPaulo</span></div></div><div className="mt-auto mb-20 text-[10px] text-gray-400 flex items-center gap-2"><div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>Synced: Just now</div></div><div className="flex-1 bg-[#FAFAFA] px-12 pt-16 overflow-y-auto pb-32"><header className="mb-8 flex justify-between items-center"><div><h1 className="text-2xl text-header text-gray-900">{groups.find(g => g.id === activeGroup).label}</h1><p className="text-sm text-gray-500 mt-1">Managing {filteredEntities.length} entities</p></div><div className="flex gap-3"><button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 shadow-sm"><Icon name="upload" size={14}/> Import CSV</button><button className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 flex items-center gap-2 shadow-lg shadow-black/10"><Icon name="plus" size={14}/> Add Entity</button></div></header><div className="flex items-center gap-4 mb-4"><div className="flex bg-white border border-gray-200 rounded-lg p-1"><button onClick={() => setTypeFilter('all')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${typeFilter === 'all' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}>Mixed</button><button onClick={() => setTypeFilter('person')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${typeFilter === 'person' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}>People</button><button onClick={() => setTypeFilter('business')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${typeFilter === 'business' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}>Businesses</button></div><div className="relative flex-1 max-w-sm"><Icon name="search" size={14} className="absolute left-3 top-3 text-gray-400" /><input type="text" placeholder="Search..." className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-300" /></div><div className="flex bg-white border border-gray-200 rounded-lg p-1 ml-auto"><button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-gray-100 text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}><Icon name="list" size={16} /></button><button onClick={() => setViewMode('board')} className={`p-1.5 rounded-md transition-all ${viewMode === 'board' ? 'bg-gray-100 text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}><Icon name="columns" size={16} /></button></div></div>{viewMode === 'list' ? <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible"><table className="w-full text-left"><thead className="bg-gray-50 border-b border-gray-100"><tr><th className="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-10"><input type="checkbox" className="rounded border-gray-300" /></th><th className="px-6 py-3 text-label">Entity</th><th className="px-6 py-3 text-label">Status</th><th className="px-6 py-3 text-label">Stage</th><th className="px-6 py-3 text-label">Source</th><th className="px-6 py-3 text-label text-right">Actions</th></tr></thead><tbody className="divide-y divide-gray-100">{filteredEntities.map(entity => <tr key={entity.id} className="hover:bg-gray-50/80 transition-colors group relative"><td className="px-6 py-4"><input type="checkbox" className="rounded border-gray-300" /></td><td className="px-6 py-4"><div className="flex items-center"><div className={`h-9 w-9 bg-gray-100 overflow-hidden mr-3 border border-gray-100 flex items-center justify-center ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}><img src={entity.avatar} alt="" className="w-full h-full object-cover" /></div><div><div className="flex items-center gap-2"><span className="text-sm font-medium text-gray-900">{entity.name}</span>{entity.type === 'business' && <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded border border-gray-200">BIZ</span>}</div><div className="text-xs text-gray-500">{entity.type === 'person' ? `${entity.role} @ ${entity.company}` : `${entity.industry} • ${entity.location}`}</div></div></div></td><td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${entity.status === 'Active' || entity.status === 'Customer' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>{entity.status}</span></td><td className="px-6 py-4"><span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">{entity.stage}</span></td><td className="px-6 py-4"><span className="text-xs text-gray-400">{entity.source}</span></td><td className="px-6 py-4 text-right relative"><button onClick={() => setActiveActionId(activeActionId === entity.id ? null : entity.id)} className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-200"><Icon name="more-horizontal" size={16} /></button>{activeActionId === entity.id && <div className="absolute right-8 top-0 bg-white shadow-xl border border-gray-100 rounded-xl p-1 z-50 w-48 text-left slide-in-right"><button onClick={() => handleAction("Opening in Salesforce", entity)} className="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 rounded-lg flex items-center gap-2"><Icon name="cloud" size={12} className="text-blue-500" /> Open in Salesforce</button><button onClick={() => handleAction("Opening LinkedIn", entity)} className="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 rounded-lg flex items-center gap-2"><Icon name="linkedin" size={12} className="text-blue-700" /> View on LinkedIn</button><div className="h-px bg-gray-100 my-1"></div><button className="w-full px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2"><Icon name="trash" size={12} /> Archive</button></div>}</td></tr>)}</tbody></table></div> : <div className="h-[600px] w-full"><EntityKanbanBoard entities={filteredEntities} onDrop={handleStageDrop} /></div>}</div></div>;
+        };
+
+        const InboxView = () => {
+            const [filter, setFilter] = useState('all'); const [selectedId, setSelectedId] = useState(1); const [replyText, setReplyText] = useState("");
+            const filteredItems = MOCK_INBOX.filter(item => { if (filter === 'messages') return item.category === 'message'; if (filter === 'system') return item.category === 'system'; return true; });
+            const selectedItem = MOCK_INBOX.find(item => item.id === selectedId);
+            return <div className="flex h-full fade-enter pt-12"><div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 pt-6"><div className="px-6 mb-4"><h2 className="text-xl font-semibold text-gray-900 mb-4">Inbox</h2><div className="flex bg-gray-100 p-1 rounded-lg"><button onClick={() => setFilter('all')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${filter === 'all' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>All</button><button onClick={() => setFilter('messages')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${filter === 'messages' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>Messages</button><button onClick={() => setFilter('system')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${filter === 'system' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>Alerts</button></div></div><div className="flex-1 overflow-y-auto">{filteredItems.map(item => <div key={item.id} onClick={() => setSelectedId(item.id)} className={`px-6 py-4 border-b border-gray-50 cursor-pointer transition-colors relative ${selectedId === item.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>{item.unread && <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-1.5 h-1.5 bg-accent rounded-full"></div>}<div className="flex justify-between items-start mb-1"><div className="flex items-center gap-2">{item.category === 'message' ? <div className="relative"><img src={item.avatar} className="w-6 h-6 rounded-full bg-gray-200" /><div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-gray-100"><Icon name={item.type === 'whatsapp' ? 'message-circle' : 'linkedin'} size={10} className={item.type === 'whatsapp' ? 'text-green-500' : 'text-blue-600'} /></div></div> : <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${item.type === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'}`}><Icon name={item.icon} size={14} /></div>}<span className={`text-sm font-medium ${item.unread ? 'text-gray-900' : 'text-gray-600'}`}>{item.title}</span></div><span className="text-[10px] text-gray-400">{item.time}</span></div><p className={`text-xs truncate ${item.unread ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>{item.preview}</p></div>)}</div></div><div className="flex-1 bg-[#FAFAFA] flex flex-col relative h-full">{selectedItem ? <><div className="h-16 border-b border-gray-200 flex items-center justify-between px-8 bg-white/50 backdrop-blur-sm sticky top-0 z-20"><div className="flex items-center gap-3"><h3 className="text-sm font-bold text-gray-900">{selectedItem.title}</h3>{selectedItem.category === 'message' && <span className={`text-[10px] px-2 py-0.5 rounded-full border ${selectedItem.type === 'whatsapp' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>via {selectedItem.type === 'whatsapp' ? 'WhatsApp' : 'LinkedIn'}</span>}{selectedItem.category === 'system' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">System Notification</span>}</div><div className="flex gap-2"><button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"><Icon name="check" size={16} /></button><button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"><Icon name="trash" size={16} /></button></div></div><div className="flex-1 overflow-y-auto p-8">{selectedItem.category === 'message' ? <div className="space-y-6">{MOCK_CHAT_HISTORY.map(msg => <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-md p-4 rounded-2xl text-sm ${msg.sender === 'me' ? 'bg-accent text-white rounded-br-none' : 'bg-white border border-gray-100 text-gray-700 rounded-bl-none shadow-sm'}`}>{msg.text}</div></div>)}<div className="flex justify-start"><div className="max-w-md p-4 rounded-2xl rounded-bl-none bg-white border border-gray-100 text-gray-700 shadow-sm text-sm">{selectedItem.preview}</div></div></div> : <div className="max-w-xl mx-auto mt-10"><div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center"><div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${selectedItem.type === 'warning' ? 'bg-amber-50 text-amber-500' : 'bg-green-50 text-green-500'}`}><Icon name={selectedItem.icon} size={32} /></div><h2 className="text-lg font-bold text-gray-900 mb-2">{selectedItem.title}</h2><p className="text-gray-500 text-sm leading-relaxed mb-6">{selectedItem.preview} Verify the source file or adjust campaign settings.</p><button className="bg-gray-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-black transition-colors">View Details</button></div></div>}</div>{selectedItem.category === 'message' && <div className="p-6 bg-white border-t border-gray-200"><div className="relative"><input type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Type your reply..." className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-all" /><button className="absolute right-2 top-2 p-1.5 bg-accent text-white rounded-lg hover:bg-blue-700 transition-colors"><Icon name="send" size={16} /></button></div></div>}</> : <div className="flex-1 flex items-center justify-center text-gray-400"><div className="text-center"><Icon name="inbox" size={48} className="mx-auto mb-4 opacity-20" /><p>Select a conversation</p></div></div>}</div></div>;
+        };
+
+        // --- NEW: INSIGHTS & ANALYTICS VIEW ---
+        const InsightsView = ({ onAction }) => {
+            return (
+                <div className="flex h-full fade-enter pt-12">
+                    <div className="w-full max-w-7xl mx-auto px-8 overflow-y-auto pb-32">
+                        {/* AI Summary Header */}
+                        <div className="mb-10 mt-6">
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                    <Icon name="sparkles" size={24} />
+                                </div>
+                                <div className="flex-1">
+                                    <h1 className="text-3xl text-header text-gray-900 leading-tight">Good afternoon, Felix.</h1>
+                                    <p className="text-lg text-gray-500 mt-2 font-light leading-relaxed max-w-3xl">
+                                        Campaign performance is trending <span className="text-green-600 font-medium">up 12%</span> this week. 
+                                        I've detected a high-intent segment of <span className="text-indigo-600 font-medium cursor-pointer hover:underline">24 SaaS Leads</span> in Brazil interacting with your Enterprise API pricing page.
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => onAction('config', [1, 2, 3])} // Mock IDs
+                                    className="px-6 py-3 bg-black text-white rounded-xl font-medium shadow-xl shadow-black/10 hover:bg-gray-800 transition-all flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <Icon name="zap" size={16} /> Action Insight
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* KPI Grid */}
+                        <div className="grid grid-cols-4 gap-6 mb-10">
+                            {[
+                                { label: 'Total Revenue', value: '$124,500', change: '+8.2%', trend: 'up' },
+                                { label: 'Active Leads', value: '1,240', change: '+12%', trend: 'up' },
+                                { label: 'Conversion Rate', value: '3.4%', change: '-0.1%', trend: 'down' },
+                                { label: 'Avg. Deal Size', value: '$12,400', change: '+2.4%', trend: 'up' },
+                            ].map((stat, i) => (
+                                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="text-label mb-2">{stat.label}</div>
+                                    <div className="flex items-end justify-between">
+                                        <div className="text-3xl font-bold text-gray-900 tracking-tight">{stat.value}</div>
+                                        <div className={`text-xs font-medium px-2 py-1 rounded-full ${stat.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                            {stat.change}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Main Forecast Chart */}
+                        <div className="grid grid-cols-3 gap-8 mb-10">
+                            <div className="col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                                <div className="flex justify-between items-center mb-8">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900">Revenue Forecast</h3>
+                                        <p className="text-xs text-gray-500 mt-1">Actual vs AI Projected Growth</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="flex items-center gap-1 text-[10px] text-gray-500"><div className="w-2 h-2 rounded-full bg-black"></div> Actual</span>
+                                        <span className="flex items-center gap-1 text-[10px] text-gray-500"><div className="w-2 h-2 rounded-full bg-indigo-500 border border-dashed"></div> Projected</span>
+                                    </div>
+                                </div>
+                                
+                                {/* CSS/SVG Chart */}
+                                <div className="h-64 w-full relative">
+                                    {/* Grid Lines */}
+                                    <div className="absolute inset-0 flex flex-col justify-between text-[10px] text-gray-300">
+                                        {[100, 75, 50, 25, 0].map(val => <div key={val} className="border-b border-gray-50 w-full h-0"></div>)}
+                                    </div>
+                                    
+                                    {/* SVG Curve */}
+                                    <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                                                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.1"/>
+                                                <stop offset="100%" stopColor="#6366f1" stopOpacity="0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        {/* Historical Data */}
+                                        <path d="M0,200 C100,180 200,220 300,150 C400,80 500,120 600,100" fill="none" stroke="#111827" strokeWidth="3" strokeLinecap="round" className="chart-path" />
+                                        {/* AI Projection (Dashed) */}
+                                        <path d="M600,100 C700,80 800,40 900,20" fill="none" stroke="#6366f1" strokeWidth="3" strokeDasharray="8,8" strokeLinecap="round" />
+                                        {/* Area */}
+                                        <path d="M0,200 C100,180 200,220 300,150 C400,80 500,120 600,100 C700,80 800,40 900,20 V250 H0 Z" fill="url(#gradient)" opacity="0.5" />
+                                        
+                                        {/* Interaction Point */}
+                                        <circle cx="600" cy="100" r="6" fill="#6366f1" stroke="white" strokeWidth="3" className="drop-shadow-md" />
+                                        <foreignObject x="560" y="50" width="100" height="40">
+                                            <div className="bg-black text-white text-[10px] px-2 py-1 rounded-lg text-center shadow-lg">Today</div>
+                                        </foreignObject>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Segmentation / Funnel */}
+                            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                                <h3 className="text-lg font-bold text-gray-900 mb-6">Funnel Health</h3>
+                                <div className="space-y-6 flex-1 flex flex-col justify-center">
+                                    {[
+                                        { label: 'New Leads', val: 85, color: 'bg-blue-500' },
+                                        { label: 'Qualified', val: 60, color: 'bg-indigo-500' },
+                                        { label: 'Negotiation', val: 35, color: 'bg-purple-500' },
+                                        { label: 'Closed Won', val: 20, color: 'bg-green-500' },
+                                    ].map((stage, i) => (
+                                        <div key={i}>
+                                            <div className="flex justify-between text-xs font-medium mb-2">
+                                                <span className="text-gray-600">{stage.label}</span>
+                                                <span className="text-gray-900">{stage.val}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                <div className={`h-full ${stage.color} rounded-full bar-grow`} style={{width: `${stage.val}%`, animationDelay: `${i * 0.1}s`}}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button className="mt-6 w-full py-3 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                                    View Detailed Report
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Recent Activity / Insights */}
+                        <div className="grid grid-cols-2 gap-8">
+                            <div>
+                                <h3 className="text-label mb-4">Customer Sentiment</h3>
+                                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div className="flex items-center justify-center h-40">
+                                        {/* Simple Sentiment Viz */}
+                                        <div className="flex gap-4 items-end h-full">
+                                            <div className="w-12 bg-green-100 rounded-t-lg relative group h-[80%]"><div className="absolute bottom-0 w-full bg-green-500 rounded-t-lg transition-all duration-1000 h-full"></div></div>
+                                            <div className="w-12 bg-gray-100 rounded-t-lg relative group h-[15%]"><div className="absolute bottom-0 w-full bg-gray-400 rounded-t-lg transition-all duration-1000 h-full"></div></div>
+                                            <div className="w-12 bg-red-100 rounded-t-lg relative group h-[5%]"><div className="absolute bottom-0 w-full bg-red-500 rounded-t-lg transition-all duration-1000 h-full"></div></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-center gap-8 mt-4 text-xs text-gray-500">
+                                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500"></div> Positive (80%)</span>
+                                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-gray-400"></div> Neutral (15%)</span>
+                                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div> Negative (5%)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-label mb-4">Campaign Recommendations</h3>
+                                <div className="space-y-3">
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center group cursor-pointer hover:border-indigo-200 hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                                <Icon name="target" size={18} />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">Retarget "Pricing Page" Drop-offs</div>
+                                                <div className="text-xs text-gray-500">34 leads visited pricing > 2x but didn't convert.</div>
+                                            </div>
+                                        </div>
+                                        <Icon name="arrow-right" size={16} className="text-gray-300 group-hover:text-indigo-600 transform group-hover:translate-x-1 transition-all" />
+                                    </div>
+                                    
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center group cursor-pointer hover:border-indigo-200 hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                                                <Icon name="users" size={18} />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900 group-hover:text-green-600 transition-colors">Upsell "Enterprise" to Pro Users</div>
+                                                <div className="text-xs text-gray-500">12 accounts nearing usage limits.</div>
+                                            </div>
+                                        </div>
+                                        <Icon name="arrow-right" size={16} className="text-gray-300 group-hover:text-green-600 transform group-hover:translate-x-1 transition-all" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SettingsView = () => {
+            const [activeSection, setActiveSection] = useState('billing');
+            return (
+                <div className="flex h-full fade-enter pt-12">
+                    <div className="w-64 bg-white border-r border-gray-200 p-6 flex flex-col h-full z-10 pt-16">
+                        <h2 className="text-label mb-4 px-2">Settings</h2>
+                        <div className="space-y-1">{['General', 'Billing', 'Team', 'Notifications'].map(section => <button key={section} onClick={() => setActiveSection(section.toLowerCase())} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${activeSection === section.toLowerCase() ? 'bg-gray-100 text-black font-medium' : 'text-gray-500 hover:bg-gray-50'}`}>{section}</button>)}</div>
+                    </div>
+                    <div className="flex-1 bg-[#FAFAFA] px-16 pt-16 overflow-y-auto pb-32">
+                        {activeSection === 'billing' ? (
+                            <div className="max-w-4xl mx-auto space-y-10">
+                                <div><h1 className="text-3xl text-header text-gray-900">Billing & Plans</h1><p className="text-gray-500 mt-2">Manage your workspace subscription and payment details.</p></div>
+                                <div className="bg-gray-900 text-white rounded-2xl p-8 flex justify-between items-center shadow-lg relative overflow-hidden"><div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20"></div><div className="relative z-10"><div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">CURRENT PLAN</div><div className="text-3xl font-bold mb-2">Pro Plan</div><div className="text-sm text-gray-400">Next billing date: March 12, 2026</div></div><div className="relative z-10 text-right"><div className="text-3xl font-bold">$49<span className="text-sm text-gray-400 font-normal">/mo</span></div><button className="mt-3 text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors">Manage Subscription</button></div></div>
+                                <div><h3 className="text-label mb-6">Available Plans</h3><div className="grid grid-cols-3 gap-6"><div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"><div className="text-lg font-bold text-gray-900 mb-1">Starter</div><div className="text-2xl font-bold text-gray-900 mb-4">$0<span className="text-sm text-gray-400 font-normal">/mo</span></div><ul className="space-y-3 mb-6"><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-green-500"/> 1 User</li><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-green-500"/> 100 Leads/mo</li></ul><button className="w-full py-2 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50">Downgrade</button></div><div className="bg-white p-6 rounded-2xl border-2 border-blue-500 shadow-lg relative"><div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">CURRENT</div><div className="text-lg font-bold text-gray-900 mb-1">Pro</div><div className="text-2xl font-bold text-gray-900 mb-4">$49<span className="text-sm text-gray-400 font-normal">/mo</span></div><ul className="space-y-3 mb-6"><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-blue-500"/> 5 Users</li><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-blue-500"/> Unlimited Leads</li><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-blue-500"/> Advanced Analytics</li></ul><button className="w-full py-2 bg-blue-50 text-blue-600 font-bold rounded-lg text-xs cursor-default">Active</button></div><div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"><div className="text-lg font-bold text-gray-900 mb-1">Enterprise</div><div className="text-2xl font-bold text-gray-900 mb-4">Custom</div><ul className="space-y-3 mb-6"><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-green-500"/> Unlimited Users</li><li className="text-xs text-gray-600 flex items-center gap-2"><Icon name="check" size={12} className="text-green-500"/> Dedicated Support</li></ul><button className="w-full py-2 bg-black text-white rounded-lg text-xs font-medium hover:bg-gray-800">Contact Sales</button></div></div></div>
+                                <div><h3 className="text-label mb-6">Payment Method</h3><div className="bg-white p-6 rounded-2xl border border-gray-100 flex items-center justify-between"><div className="flex items-center gap-4"><div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center border border-gray-200"><div className="w-6 h-4 bg-red-500/20 rounded-full relative overflow-hidden"><div className="absolute inset-0 bg-yellow-500/40 translate-x-2"></div></div></div><div><div className="text-sm font-medium text-gray-900">Mastercard ending in 4242</div><div className="text-xs text-gray-500">Expires 12/28</div></div></div><button className="text-xs text-blue-600 font-medium hover:underline">Update</button></div></div>
+                                <div><h3 className="text-label mb-6">Invoice History</h3><div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">{[{ date: 'Feb 12, 2026', amount: '$49.00', status: 'Paid' }, { date: 'Jan 12, 2026', amount: '$49.00', status: 'Paid' }, { date: 'Dec 12, 2025', amount: '$49.00', status: 'Paid' }].map((invoice, i) => <div key={i} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"><div className="text-sm text-gray-900">{invoice.date}</div><div className="flex items-center gap-4"><span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">{invoice.status}</span><span className="text-sm font-medium text-gray-900">{invoice.amount}</span><button className="text-gray-400 hover:text-black"><Icon name="download" size={14}/></button></div></div>)}</div></div>
+                            </div>
+                        ) : <div className="flex flex-col items-center justify-center h-full text-gray-400"><Icon name="settings" size={48} className="mb-4 opacity-20" /><p>Section under construction</p></div>}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState('search'); const [activeTab, setActiveTab] = useState('search'); const [draftConfig, setDraftConfig] = useState(null); const [isDataPanelOpen, setIsDataPanelOpen] = useState(false); const [toastMessage, setToastMessage] = useState(null); const [showWhatsApp, setShowWhatsApp] = useState(false); const [isProfileOpen, setIsProfileOpen] = useState(false);
+            const handleTabChange = (tabId) => { 
+                setActiveTab(tabId); 
+                if (tabId === 'leads') setView('leads'); 
+                else if (tabId === 'campaigns') setView('campaigns'); 
+                else if (tabId === 'inbox') setView('inbox'); 
+                else if (tabId === 'search') setView('search');
+                else if (tabId === 'settings') setView('settings');
+                else if (tabId === 'insights') setView('insights');
+            };
+            const handleAction = (action, payload) => { if (action === 'config') { setDraftConfig({ leads: payload }); setView('config'); setActiveTab(null); } };
+            const handleGenerate = (channels, product) => { setDraftConfig({ ...draftConfig, channels, product }); setView('flow'); };
+            const showToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
+            return <div className="h-screen w-screen bg-[#FAFAFA] relative overflow-hidden"><main className="h-full w-full overflow-hidden relative">{view === 'search' && <SearchView onAction={handleAction} />}{view === 'config' && <ConfigView selectedCount={draftConfig?.leads?.length || 0} onGenerate={handleGenerate} />}{view === 'flow' && <FlowView config={draftConfig} onPublish={() => handleTabChange('campaigns')} />}{view === 'campaigns' && <CampaignsView />}{view === 'leads' && <EntitiesView showToast={showToast} />}{view === 'inbox' && <InboxView />}{view === 'settings' && <SettingsView />}{view === 'insights' && <InsightsView onAction={handleAction} />}</main><Dock activeTab={activeTab} onTabChange={handleTabChange} onDataClick={() => setIsDataPanelOpen(true)} /><DataIngestionPanel isOpen={isDataPanelOpen} onClose={() => setIsDataPanelOpen(false)} showToast={showToast} onToggleWidget={setShowWhatsApp} /><ProfilePanel isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} onViewChange={(newView) => { setView(newView); setActiveTab(newView); }} /><Toast message={toastMessage} visible={!!toastMessage} />{showWhatsApp && <div className="whatsapp-float bg-green-500 w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-white cursor-pointer hover:bg-green-600 transition-colors"><Icon name="message-circle" size={24} /></div>}<button onClick={() => setIsProfileOpen(true)} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center overflow-hidden hover:scale-105 transition-transform z-50"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Profile" className="w-full h-full object-cover" /></button></div>;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>

@@ -1,6 +1,13 @@
-[tool_code]
-# Standard Python/FastAPI ignores
-__pycache__/
-*.pyc
+
+# Environment variables
 .env
-.venv/
+
+# Python cache
+__pycache__/
+.pytest_cache/
+
+# VSCode
+.vscode/
+
+# Database file
+sql_app.db

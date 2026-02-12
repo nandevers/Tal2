@@ -5,19 +5,26 @@ services:
     build:
       context: .
       dockerfile: backend.Dockerfile
-    # The backend is not exposed directly to the host.
-    # It's only accessible from within the Docker network (e.g., by the frontend service).
     ports:
-      - "8000:8000" # Map backend container port 8000 to host port 8000
+      - "8000:8000"
+    env_file:
+      - nexus-light-backend/.env
+    networks:
+      - app-network
 
   frontend:
     build:
       context: .
       dockerfile: frontend.Dockerfile
     ports:
-      - "5174:80" # Map host port 5174 to Nginx container port 80
+      - "5174:80"
     volumes:
-      # Mount our custom nginx config
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - backend # Ensures backend starts before frontend
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
