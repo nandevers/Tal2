@@ -1,7 +1,6 @@
 // src/components/Toast/Toast.tsx
 import React from 'react';
 import type { ToastProps } from './types';
-import IconComponent from '../../utils/IconComponent'; // Assuming IconComponent is needed for the green dot, or replace
 
 const Toast: React.FC<ToastProps> = ({ message, visible }) => {
     if (!visible) return null;

@@ -58,7 +58,7 @@ const MapView: React.FC<MapViewProps> = ({ entities, selected, onToggleSelect, s
                                         <img src={entity.avatar} className={`w-full h-full object-cover ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`} alt={entity.name} />
                                     </div>
                                     {isSelected && <div className="absolute -top-1 -right-1 w-4 h-4 bg-brand-primary rounded-full border border-white flex items-center justify-center text-white z-20">
-                                        <IconComponent name="check" size={10} strokeWidth={3} />
+                                        <IconComponent name="check" size={10} />
                                     </div>}
                                 </div>
                                 <div className={`w-px h-3 bg-gray-300 mt-px ${isSelected ? 'h-4 bg-brand-primary' : ''}`}></div>

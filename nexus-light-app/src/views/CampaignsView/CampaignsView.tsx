@@ -5,7 +5,7 @@ import IconComponent from '../../utils/IconComponent'; // Using the shared IconC
 
 const CampaignsView: React.FC = () => {
     const [expandedRow, setExpandedRow] = useState<number | null>(null);
-    const [campaigns, setCampaigns] = useState(MOCK_CAMPAIGNS);
+    const [campaigns] = useState(MOCK_CAMPAIGNS);
 
     const toggleExpand = (id: number) => setExpandedRow(expandedRow === id ? null : id);
 
@@ -38,15 +38,15 @@ const CampaignsView: React.FC = () => {
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-center justify-between text-[10px] text-gray-400 uppercase tracking-wider font-medium">
                                         <span>Progress</span>
-                                        <span className="text-gray-900">{camp.sent}/{camp.leads} Sent</span>
+                                        <span className="text-gray-900">{camp.sent ?? 0}/{camp.leads} Sent</span>
                                     </div>
                                     <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden flex">
-                                        <div className="h-full bg-gray-800" style={{width: `${(camp.sent / camp.leads) * 100}%`}}></div>
-                                        <div className="h-full bg-green-500" style={{width: `${(camp.replies / camp.leads) * 100}%`}}></div>
+                                        <div className="h-full bg-gray-800" style={{width: `${((camp.sent ?? 0) / camp.leads) * 100}%`}}></div>
+                                        <div className="h-full bg-green-500" style={{width: `${((camp.replies ?? 0) / camp.leads) * 100}%`}}></div>
                                     </div>
                                     <div className="flex justify-end gap-3 text-[9px] text-gray-400 mt-0.5">
                                         <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div> Sent via SendGrid</span>
-                                        {camp.replies > 0 && <span className="flex items-center gap-1 text-green-600"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> {camp.replies} Replies</span>}
+                                        {(camp.replies ?? 0) > 0 && <span className="flex items-center gap-1 text-green-600"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> {camp.replies} Replies</span>}
                                     </div>
                                 </div>
                             </div>
@@ -62,7 +62,7 @@ const CampaignsView: React.FC = () => {
                                     <div key={c} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-2">
-                                                {MOCK_CHANNELS.find(ch => ch.id === c)?.icon && <IconComponent name={MOCK_CHANNELS.find(ch => ch.id === c).icon} size={16} className="text-gray-500" />}
+                                                {MOCK_CHANNELS.find(ch => ch.id === c)?.icon && <IconComponent name={MOCK_CHANNELS.find(ch => ch.id === c)?.icon as string} size={16} className="text-gray-500" />}
                                                 <span className="text-sm font-medium text-gray-900 capitalize">{c} Config</span>
                                             </div>
                                             <div className="relative inline-flex h-5 w-9 items-center rounded-full bg-accent cursor-pointer">

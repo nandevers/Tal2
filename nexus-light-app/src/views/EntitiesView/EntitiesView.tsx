@@ -1,10 +1,13 @@
 // src/views/EntitiesView/EntitiesView.tsx
 import React, { useState } from 'react';
-import { Filter, Upload, Plus, SlidersHorizontal, Download, MoreHorizontal, PlusCircle, Search } from 'lucide-react';
+// Removed unused imports from lucide-react
 import { MOCK_ENTITIES } from '../../data/mockData';
 import IconComponent from '../../utils/IconComponent'; // Using the shared IconComponent
+import type { EntitiesViewProps } from './types'; // Import props interface
+import type { PersonEntity, BusinessEntity, Entity } from '../../data/mockData'; // Import specific entity types
 
-const EntitiesView: React.FC = () => {
+
+const EntitiesView: React.FC<EntitiesViewProps> = () => {
     const [activeGroup, setActiveGroup] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all'); // all, person, business
 
@@ -123,7 +126,7 @@ const EntitiesView: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredEntities.map((entity) => (
+                            {filteredEntities.map((entity: Entity) => (
                                  <tr key={entity.id} className="hover:bg-gray-50/80 transition-colors group">
                                     <td className="px-6 py-4">
                                         <input type="checkbox" className="rounded border-gray-300" />
@@ -131,7 +134,7 @@ const EntitiesView: React.FC = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
                                             <div className={`h-9 w-9 bg-gray-100 overflow-hidden mr-3 border border-gray-100 flex items-center justify-center ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}>
-                                                <img src={entity.avatar} className="w-full h-full object-cover" />
+                                                <img src={entity.avatar} className="w-full h-full object-cover" alt={entity.name} />
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
@@ -139,7 +142,9 @@ const EntitiesView: React.FC = () => {
                                                     {entity.type === 'business' && <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 rounded border border-gray-200">BIZ</span>}
                                                 </div>
                                                 <div className="text-xs text-gray-500">
-                                                    {entity.type === 'person' ? `${entity.role} @ ${entity.company}` : `${entity.industry} • ${entity.location}`}
+                                                    {entity.type === 'person'
+                                                        ? `${(entity as PersonEntity).role} @ ${(entity as PersonEntity).company}`
+                                                        : `${(entity as BusinessEntity).industry} • ${(entity as BusinessEntity).location}`}
                                                 </div>
                                             </div>
                                         </div>
@@ -171,7 +176,7 @@ const EntitiesView: React.FC = () => {
                         <span>Showing {filteredEntities.length} of {MOCK_ENTITIES.length}</span>
                         <div className="flex gap-2">
                             <button className="px-2 py-1 border border-gray-200 rounded hover:bg-gray-50" disabled>Prev</button>
-                            <button className="px-2 py-1 border border-gray-200 rounded hover:bg-gray-50">Next</button>
+                            <button className="px-2 py-1 border border-gray-200 rounded hover:bg-gray-50" disabled>Next</button>
                         </div>
                     </div>
                 </div>

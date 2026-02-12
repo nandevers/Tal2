@@ -1,0 +1,6 @@
+[tool_code]
+# Standard Python/FastAPI ignores
+__pycache__/
+*.pyc
+.env
+.venv/

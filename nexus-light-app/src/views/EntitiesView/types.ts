@@ -1,2 +1,5 @@
 // src/views/EntitiesView/types.ts
-// No props currently, but interface can be added here if needed in the future.
+
+export interface EntitiesViewProps {
+    // showToast: (message: string) => void; // Removed as it's not used in EntitiesView
+}

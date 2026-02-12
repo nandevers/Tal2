@@ -3,7 +3,7 @@ import React from 'react';
 import {
     Mail, Linkedin, MessageCircle, Facebook, Instagram, Search, Users, Layers, Inbox, BarChart2, Settings,
     Check, Building2, User, Package, ChevronDown, Upload, Plus, Filter, SlidersHorizontal, Download, MoreHorizontal,
-    ArrowRight, PlusCircle, Database, List, Map, Sparkles, Zap, Target, Bell, Trash, Send, ChevronUp, Globe, X, Fingerprint, Eye, Cloud, Server, Shield
+    ArrowRight, ArrowUp, PlusCircle, Database, List, Map, Sparkles, Zap, Target, Bell, Trash, Send, ChevronUp, Globe, X, Fingerprint, Eye, Cloud, Server, Shield
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react'; // Import LucideIcon as a type
 
@@ -33,6 +33,7 @@ const iconMap: { [key: string]: LucideIcon } = {
     download: Download,
     'more-horizontal': MoreHorizontal,
     'arrow-right': ArrowRight,
+    'arrow-up': ArrowUp, // Added missing arrow-up icon
     'plus-circle': PlusCircle,
     database: Database, // Added database
     list: List, // Added list

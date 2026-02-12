@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 
 import { MOCK_ENTITIES, MOCK_CHANNELS } from '../../data/mockData';
+import type { Entity } from '../../data/mockData'; // Import Entity type
 import IconComponent from '../../utils/IconComponent';
 import type { FlowViewProps } from './types';
 
@@ -9,7 +10,7 @@ const FlowView: React.FC<FlowViewProps> = ({ config, onPublish }) => {
     const [activeTab, setActiveTab] = useState(config.channels[0] || 'email');
 
     // Helper to get selected entities details
-    const selectedEntities = config.leads.map(id => MOCK_ENTITIES.find(e => e.id === id)).filter(Boolean);
+    const selectedEntities = config.leads.map(id => MOCK_ENTITIES.find(e => e.id === id) as Entity | undefined).filter(Boolean) as Entity[];
 
     const getContentForChannel = (channel: string) => {
         if (channel === 'whatsapp') {
@@ -79,17 +80,22 @@ const FlowView: React.FC<FlowViewProps> = ({ config, onPublish }) => {
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-3">
                      {/* Dynamic Selected Entities */}
-                     {selectedEntities.map((entity) => (
-                        <div key={entity.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
-                            <div className={`w-8 h-8 flex-shrink-0 bg-gray-100 overflow-hidden ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}>
-                                <img src={entity.avatar} className="w-full h-full object-cover" />
+                     {selectedEntities.map((entity, index) => { // Added index for key if id not unique enough for map
+                        if (!entity) return null; // Should not happen with filter(Boolean) but good for TS
+                        return (
+                            <div key={entity.id || index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
+                                <div className={`w-8 h-8 flex-shrink-0 bg-gray-100 overflow-hidden ${entity.type === 'business' ? 'rounded-lg' : 'rounded-full'}`}>
+                                    <img src={entity.avatar} className="w-full h-full object-cover" alt={entity.name} />
+                                </div>
+                                <div className="overflow-hidden">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{entity.name}</div>
+                                    <div className="text-xs text-gray-500 truncate">
+                                        {entity.type === 'person' ? entity.company : entity.industry}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="overflow-hidden">
-                                <div className="text-sm font-medium text-gray-900 truncate">{entity.name}</div>
-                                <div className="text-xs text-gray-500 truncate">{entity.type === 'person' ? entity.company : entity.industry}</div>
-                            </div>
-                        </div>
-                     ))}
+                        );
+                    })}
                 </div>
             </div>
 

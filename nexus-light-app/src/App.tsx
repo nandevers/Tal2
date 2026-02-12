@@ -1,11 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './index.css'; // Ensure main CSS is imported
-import {
-    MOCK_PRODUCTS,
-    MOCK_CHANNELS,
-    MOCK_CAMPAIGNS,
-    MOCK_ENTITIES
-} from './data/mockData';
 import IconComponent from './utils/IconComponent';
 
 
@@ -33,7 +27,7 @@ interface DraftConfig {
 // --- MAIN APP ---
 const App = () => {
     const [view, setView] = useState('search');
-    const [activeTab, setActiveTab] = useState('search');
+    const [activeTab, setActiveTab] = useState<string | null>('search');
     const [draftConfig, setDraftConfig] = useState<DraftConfig | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [isDataPanelOpen, setIsDataPanelOpen] = useState(false);
@@ -53,7 +47,7 @@ const App = () => {
 
     const handleAction = (action: string, payload: number[]) => {
         if (action === 'config') {
-            setDraftConfig({ leads: payload }); // Initialize leads only, channels and product will be set in ConfigView
+            setDraftConfig({ leads: payload, channels: [], product: "" }); // Initialize leads only, channels and product will be set in ConfigView
             setView('config');
             setActiveTab(null);
         }
@@ -78,7 +72,7 @@ const App = () => {
                 {view === 'config' && <ConfigView selectedCount={draftConfig?.leads?.length || 0} onGenerate={handleGenerate} />}
                 {view === 'flow' && draftConfig && <FlowView config={draftConfig} onPublish={() => handleTabChange('campaigns')} />}
                 {view === 'campaigns' && <CampaignsView />}
-                {view === 'leads' && <EntitiesView showToast={showToast} />}
+                {view === 'leads' && <EntitiesView />}
                 {view === 'inbox' && <InboxView />} {/* Render InboxView */}
                 {view === 'insights' && <InsightsView onAction={handleAction} />} {/* Render InsightsView with onAction */}
                 {view === 'settings' && <SettingsView />} {/* Render SettingsView */}
