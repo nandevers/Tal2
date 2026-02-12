@@ -336,6 +336,7 @@
             const [hasSearched, setHasSearched] = useState(false);
             const [searchResult, setSearchResult] = useState(null);
             const [searchStatus, setSearchStatus] = useState(null);
+            const [resultFormat, setResultFormat] = useState('text');
 
             const handleSearch = async (e) => {
                 if (e.key === 'Enter') {
@@ -364,7 +365,13 @@
                                     setSearchStatus(chunk.content);
                                 } else if (chunk.type === 'answer') {
                                     setSearchStatus(null);
-                                    setSearchResult(chunk.content);
+                                    setResultFormat(chunk.format);
+                                    if (chunk.format === 'json') {
+                                        const content = chunk.content.replace("```json", "").replace("```", "").trim();
+                                        setSearchResult(JSON.parse(content));
+                                    } else {
+                                        setSearchResult(chunk.content);
+                                    }
                                 } else if (chunk.type === 'error') {
                                     setSearchStatus(`Error: ${chunk.content}`);
                                 }
@@ -379,6 +386,23 @@
             const handleSuggested = (suggestion) => {
                 setQuery(suggestion);
             };
+
+            const EntityCard = ({ entity }) => (
+                <div className={`group flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm`}>
+                    <div className="relative">
+                        <img src={entity.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${entity.name}`} className={`w-10 h-10 bg-gray-100 rounded-lg`} />
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                            <h4 className={`font-medium text-gray-900`}>{entity.name}</h4>
+                            <span className="text-[9px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded border border-gray-100 flex items-center gap-1">
+                                <Icon name="globe" size={8} /> {entity.source || 'N/A'}
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-500">{entity.role} @ {entity.company}</p>
+                    </div>
+                </div>
+            );
 
             return (
                 <div className="w-full max-w-4xl mx-auto pt-32 px-6 flex flex-col items-center relative h-full">
@@ -410,7 +434,15 @@
                     {hasSearched && (
                         <div className="w-full mt-8 fade-enter pb-32">
                             {searchStatus && <div className="text-center text-gray-500">{searchStatus}</div>}
-                            {searchResult && <div className="text-left whitespace-pre-wrap">{searchResult}</div>}
+                            {searchResult && (
+                                resultFormat === 'json' ? (
+                                    <div className="space-y-3">
+                                        {searchResult.map(entity => <EntityCard key={entity.id} entity={entity} />)}
+                                    </div>
+                                ) : (
+                                    <div className="text-left whitespace-pre-wrap">{searchResult}</div>
+                                )
+                            )}
                         </div>
                     )}
                 </div>
