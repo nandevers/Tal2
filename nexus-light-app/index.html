@@ -493,6 +493,8 @@
             const [searchStatus, setSearchStatus] = useState(null);
             const [toolArtifacts, setToolArtifacts] = useState([]);
             const [resultFormat, setResultFormat] = useState('text');
+            const [entityFilter, setEntityFilter] = useState('all'); // 'all', 'person', 'business'
+            const [selected, setSelected] = useState([]);
 
             const handleSearch = async (e) => {
                 if (e.key === 'Enter') {
@@ -500,6 +502,8 @@
                     setSearchStatus("Searching...");
                     setSearchResult(null);
                     setToolArtifacts([]);
+                    setEntityFilter('all'); // Reset filter on new search
+                    setSelected([]); // Clear selection on new search
 
                     const response = await fetch(`/api/search/?q=${query}`);
                     const reader = response.body.getReader();
@@ -542,21 +546,17 @@
                 }
             };
 
-            const handleSuggested = (suggestion) => {
-                setQuery(suggestion);
-            };
-
-            const ProcessPill = ({ status }) => {
-            if (!status) return null;
-            return (
-                <div className="flex justify-center my-4">
-                    <div className="bg-gray-200 text-gray-700 text-xs font-medium px-4 py-2 rounded-full animate-pulse">
-                        {status}
-                    </div>
-                </div>
-            );
-        };
-
+                        const handleSuggested = (suggestion) => {
+                            setQuery(suggestion);
+                            // Optionally set filter based on suggestion
+                            if (suggestion.toLowerCase().includes("companies")) setEntityFilter('business');
+                            else setEntityFilter('all');
+                        };
+            
+                        const toggleSelect = (id) => {
+                            if (selected.includes(id)) setSelected(selected.filter(i => i !== id));
+                            else setSelected([...selected, id]);
+                        };
         const ToolArtifactCard = ({ artifact }) => {
             const { tool_name, query, status, result } = artifact;
             const isSuccess = status === 'success';
@@ -590,23 +590,101 @@
             )
         };
         
-        const EntityCard = ({ entity, onToggle, isSelected, selectionMode }) => (
-            <div className={`group flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm ${selectionMode ? 'selection-mode' : ''} ${isSelected ? 'border-blue-500' : ''}`} onClick={() => onToggle(entity.id)}>
-                <div className="ghost-checkbox">
-                    <input type="checkbox" checked={isSelected} className="rounded-full" onChange={() => {}} />
-                </div>
-                <div className="relative">
-                    <img src={entity.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${entity.name}`} className={`w-10 h-10 bg-gray-100 rounded-lg`} />
-                </div>
-                <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                        <h4 className={`font-medium text-gray-900`}>{entity.name}</h4>
-                        <span className="text-[9px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded border border-gray-100 flex items-center gap-1">
-                            <Icon name="globe" size={8} /> {entity.source || 'N/A'}
-                        </span>
+            // Filter search results based on entityFilter
+            const filteredSearchResults = searchResult ? searchResult.filter(entity => {
+                if (entityFilter === 'person') return entity.type === 'person';
+                if (entityFilter === 'business') return entity.type === 'business';
+                return true; // 'all'
+            }) : [];
+
+            const peopleCount = searchResult ? searchResult.filter(e => e.type === 'person').length : 0;
+            const companiesCount = searchResult ? searchResult.filter(e => e.type === 'business').length : 0;
+
+        const EntityCard = ({ entity, onToggle, onAddToCampaign, onViewPeople, onEmailEntity, isSelected, selectionMode }) => (
+            <div className={`group flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm ${selectionMode ? 'selection-mode' : ''} ${isSelected ? 'border-blue-500' : ''}`}>
+                <div className="flex-grow flex items-center gap-4"> {/* Wrap content for better flex control */}
+                    <div className="ghost-checkbox">
+                        <input type="checkbox" checked={isSelected} className="rounded-full" onChange={() => onToggle(entity.id)} />
                     </div>
-                    <p className="text-sm text-gray-500">{entity.role} @ {entity.company}</p>
-                </div>
+                    <div className="relative">
+                        <img src={entity.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${entity.name}`} className={`w-10 h-10 bg-gray-100 rounded-lg`} />
+                    </div>
+                                    <div className="flex-1">
+                                                            <div className="flex items-center gap-2"> {/* New div to hold name and status badge */}
+                                                                <h4 className={`font-medium text-gray-900`}>{entity.name}</h4>
+                                                                {/* Entity Status Badge */}
+                                                                {entity.status && (
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                                                                        entity.status === 'Active' || entity.status === 'Customer' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                                        entity.status === 'Target' || entity.status === 'New' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                                                                        'bg-gray-50 text-gray-700 border-gray-100'
+                                                                    }`}>
+                                                                        {entity.status}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {/* Contextual Badge (remains in its place for hover disclosure) */}
+                                                            <div className="flex justify-between items-start">
+                                                                {entity.type === 'person' ? (
+                                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                                                        {entity.role}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                                                                        {entity.industry}
+                                                                    </span>
+                                                                )}
+                                                            </div>                                        {entity.type === 'person' ? (
+                                            <p className="text-sm text-gray-500">{entity.company} • {entity.source || 'Internal'}</p>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">{entity.location} • {entity.source || 'Internal'}</p>
+                                        )}
+                                    </div>                </div>
+                {/* Actionable Hover States */}
+                {!isSelected && ( // Only show hover actions if not already selected
+                    <div className="absolute right-4 flex items-center gap-2 transition-all duration-200">
+                        {/* Initially hidden badge, visible if not hovering */}
+                        <div className="group-hover:opacity-0 transition-opacity">
+                            {entity.type === 'person' ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                    {entity.role}
+                                </span>
+                            ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                                    {entity.industry}
+                                </span>
+                            )}
+                        </div>
+                        {/* Icons visible on hover */}
+                        <div className="absolute right-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                            {entity.type === 'business' && ( // "View People" action only for businesses
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onViewPeople(entity.id); }} 
+                                    className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                                    title="View People in Company"
+                                >
+                                    <Icon name="users" size={16} />
+                                </button>
+                            )}
+                            {entity.type === 'person' && ( // "Email" action only for people
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onEmailEntity(entity.id); }} 
+                                    className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                                    title="Email Contact"
+                                >
+                                    <Icon name="mail" size={16} />
+                                </button>
+                            )}
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onAddToCampaign(entity.id); }} 
+                                className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                                title="Add to Campaign"
+                            >
+                                <Icon name="plus" size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         );
 
@@ -636,6 +714,24 @@
                                 <button onClick={() => handleSuggested("Companies around me")} className="px-3 py-1.5 rounded-full border border-gray-100 bg-white text-xs text-gray-500 hover:text-black hover:border-gray-300 transition-colors shadow-sm">Companies around me</button>
                             </div>
                         )}
+                        {hasSearched && searchResult && resultFormat === 'json' && ( // Only show segmented control if results are json
+                            <div className="mt-6 flex justify-center fade-enter">
+                                <div className="inline-flex rounded-full shadow-sm bg-white border border-gray-200 p-1">
+                                    <button
+                                        onClick={() => setEntityFilter('person')}
+                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${entityFilter === 'person' ? 'bg-accent text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+                                    >
+                                        People ({peopleCount})
+                                    </button>
+                                    <button
+                                        onClick={() => setEntityFilter('business')}
+                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${entityFilter === 'business' ? 'bg-accent text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+                                    >
+                                        Companies ({companiesCount})
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     {hasSearched && (
                         <div className="w-full mt-8 fade-enter pb-32">
@@ -644,12 +740,28 @@
                             {searchResult && (
                                 resultFormat === 'json' ? (
                                     <div className="space-y-3">
-                                        {Array.isArray(searchResult) && searchResult.map(entity => <EntityCard key={entity.id} entity={entity} />)}
-                                    </div>
+                                                                                    {filteredSearchResults.map(entity => (
+                                                                                        <EntityCard 
+                                                                                            key={entity.id} 
+                                                                                            entity={entity} 
+                                                                                            onToggle={toggleSelect}
+                                                                                            onAddToCampaign={(id) => onAction('add-to-campaign', id)}
+                                                                                            onViewPeople={(id) => onAction('view-people', id)}
+                                                                                            onEmailEntity={(id) => onAction('email-entity', id)} // New prop
+                                                                                            isSelected={selected.includes(entity.id)}
+                                                                                            selectionMode={true} // Always enable selection mode for now
+                                                                                        />
+                                                                                    ))}                                    </div>
                                 ) : (
                                     <div className="text-left whitespace-pre-wrap">{searchResult}</div>
                                 )
                             )}
+                        </div>
+                    )}
+                    {selected.length > 0 && (
+                        <div className="absolute bottom-32 floating-island bg-white p-2 rounded-2xl flex items-center gap-2 fade-enter border border-gray-100 z-40">
+                            <div className="px-4 py-2 font-medium text-sm text-gray-900 border-r border-gray-100">{selected.length} selected</div>
+                            <button onClick={() => onAction('create-campaign', selected)} className="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 font-medium">Build Campaign</button>
                         </div>
                     )}
                 </div>
@@ -976,6 +1088,18 @@
                     const data = await response.json();
                     setSuggestedCampaignName(data.name);
                     setCreateCampaignModalOpen(true);
+                } else if (action === 'add-to-campaign') {
+                    // For now, just show a toast message
+                    showToast(`Added entity ${payload} to a new campaign (placeholder)`);
+                } else if (action === 'view-people') {
+                    // For now, just show a toast message
+                    showToast(`Viewing people for company ${payload} (placeholder)`);
+                    // In a real app, this would likely trigger a new search or filter
+                    // setView('search');
+                    // setQuery(`people in company ID: ${payload}`); 
+                } else if (action === 'email-entity') {
+                    // For now, just show a toast message
+                    showToast(`Initiating email to entity ${payload} (placeholder)`);
                 }
             };
             

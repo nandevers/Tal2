@@ -18,9 +18,57 @@ from starlette.concurrency import run_in_threadpool
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Global GenAI client for model listing (initialized once)
+genai_client = None
+if GEMINI_API_KEY:
+    try:
+        genai_client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize GenAI client for model listing: {e}")
+
+async def get_available_models() -> List[str]:
+    """
+    Lists available GenAI models and filters for those supporting generateContent,
+    prioritizing specific models.
+    """
+    if not genai_client:
+        logger.warning("GenAI client not initialized, returning default fallback chain.")
+        return ['gemini-1.5-pro', 'gemini-1.0-pro'] # Fallback if client init failed
+
+    available_models = []
+    try:
+        # Fetch models and sort them (e.g., gemini-1.5-pro first)
+        all_models = await run_in_threadpool(genai_client.models.list)
+        
+        # Prioritize desired models
+        priority_models = ['gemini-1.5-pro', 'gemini-1.0-pro-001', 'gemini-1.0-pro'] # Added gemini-1.0-pro-001 as it's often more stable
+        
+        # Filter and add models to available_models based on priority and capability
+        for model_name in priority_models:
+            for m in all_models:
+                if m.name == f"models/{model_name}" and "generateContent" in m.supported_actions:
+                    available_models.append(model_name)
+                    break # Found and added, move to next priority
+
+        # Add any other generateContent supporting models if primary ones aren't enough
+        for m in all_models:
+            model_id = m.name.split('/')[-1]
+            if model_id not in available_models and "generateContent" in m.supported_actions:
+                # Optionally filter out models not suitable for general text generation if needed
+                # e.g., if 'embedding' models appear, we might want to skip them
+                available_models.append(model_id)
+
+    except Exception as e:
+        logger.error(f"Failed to list or filter GenAI models: {e}")
+        # Fallback to a known good set if API call fails
+        return ['gemini-1.5-pro', 'gemini-1.0-pro'] 
+
+    # Ensure uniqueness and return
+    return list(dict.fromkeys(available_models)) # Remove duplicates while preserving order
+
 # --- MODEL FALLBACK CHAIN ---
-# Assumes the existence of these models.
-MODEL_FALLBACK_CHAIN = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.0-pro']
+# Will be populated dynamically
+MODEL_FALLBACK_CHAIN = [] # Placeholder, will be filled on app startup
 
 # --- THE FASTAPI ROUTER ---
 router = APIRouter(prefix="/api/search", tags=["Search"])

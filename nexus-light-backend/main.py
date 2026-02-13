@@ -54,12 +54,23 @@ def seed_database():
     finally:
         db.close()
 
+from app.routes.search import get_available_models, MODEL_FALLBACK_CHAIN # Import here
+
 @app.on_event("startup")
-def on_startup():
+async def on_startup(): # Make it async
     create_db_and_tables()
     seed_database()
     from app.config import SERPAPI_API_KEY # Import here to ensure config is loaded
     print(f"Loaded SERPAPI_API_KEY: {SERPAPI_API_KEY}")
+
+    # Populate the MODEL_FALLBACK_CHAIN dynamically
+    if not GEMINI_API_KEY:
+        print("GEMINI_API_KEY not found. Skipping dynamic model loading.")
+    else:
+        print("Attempting to dynamically load GenAI models...")
+        models = await get_available_models()
+        MODEL_FALLBACK_CHAIN.extend(models) # Use extend to add elements
+        print(f"MODEL_FALLBACK_CHAIN populated with: {MODEL_FALLBACK_CHAIN}")
 
 @app.get("/api/status", tags=["Health Check"])
 def get_status():
