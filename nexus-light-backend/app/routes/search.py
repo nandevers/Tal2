@@ -5,6 +5,7 @@ import requests
 from typing import List, Optional, Generator, Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.database import get_db, Entity
@@ -191,6 +192,44 @@ async def ai_search_generator(user_query: str, db: Session):
         except Exception as e:
             logger.error(f"AI Generation Error (Chat): {e}")
             yield json.dumps({"type": "error", "content": str(e)}) + "\n"
+
+
+from pydantic import BaseModel
+
+class SuggestNameRequest(BaseModel):
+    entity_ids: List[int]
+
+@router.post("/groups/suggest-name")
+async def suggest_name(request: SuggestNameRequest, db: Session = Depends(get_db)):
+    """
+    Suggests a name for a group of entities based on their common characteristics.
+    """
+    entities = db.query(Entity).filter(Entity.id.in_(request.entity_ids)).all()
+    if not entities:
+        raise HTTPException(status_code=404, detail="Entities not found")
+
+    # Create a summary of the entities to send to the model
+    entity_summary = []
+    for entity in entities:
+        entity_summary.append(f"- {entity.name} ({entity.role} @ {entity.company})")
+
+    prompt = f"""
+    You are an expert at summarizing and naming groups of things.
+    Based on the following list of entities, suggest a concise and descriptive name for a new campaign/group.
+
+    Entities:
+    {", ".join(entity_summary)}
+
+    Suggested Name:
+    """
+
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = await generate_single_turn_with_fallback(client, prompt)
+        return {"name": response.text.strip()}
+    except Exception as e:
+        logger.error(f"Failed to suggest name: {e}")
+        raise HTTPException(status_code=500, detail="Failed to suggest a name for the group.")
 
 
 @router.get("/")
